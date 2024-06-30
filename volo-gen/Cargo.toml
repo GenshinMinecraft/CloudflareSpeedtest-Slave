@@ -1,0 +1,18 @@
+[package]
+name = "volo-gen"
+version = "0.1.0"
+edition.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+volo.workspace = true
+volo-grpc.workspace = true
+pilota.workspace = true
+
+anyhow.workspace = true
+futures.workspace = true
+tokio = { workspace = true, features = ["full"] }
+
+[build-dependencies]
+volo-build.workspace = true

@@ -1,3 +1,0 @@
-# CloudflareSpeedtest-Slave
-
-Wait
