@@ -1,0 +1,32 @@
+[package]
+name = "Slave-sp"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+fastping-rs = "0.2"
+log = "0.4"
+simple_logger = "5.0.0"
+tokio = { version =  "1.38.0", features = ["full"] }
+tonic = "0.11.0"
+prost = "0.12.6"
+prost-types = "0.12.6"
+tonic-build = "0.11.0"
+
+[[bin]] 
+name = "Slave-sp"
+path = "src/main.rs"
+
+[build-dependencies]
+tonic-build = "0.3"
+
+[profile.dev]
+# Must always use panic = "abort" to avoid needing to define the unstable eh_personality lang item.
+panic = "abort"
+
+[profile.release]
+opt-level = "z"     # Optimize for size.
+lto = true          # Enable Link Time Optimization
+codegen-units = 1   # Reduce number of codegen units to increase optimizations.
+panic = "abort"     # Abort on panic
+strip = true        # Automatically strip symbols from the binary.

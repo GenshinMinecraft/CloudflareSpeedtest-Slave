@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package cfst_rpc;
+
+service CloudflareSpeedtest {
+  rpc Bootstrap(BootstrapRequest) returns (BootstrapResponse);
+  rpc Speedtest(SpeedtestRequest) returns (SpeedtestResponse);
+  rpc Upgrade(UpgradeRequest) returns (UpgradeResponse);
+  rpc Alive(Ping) returns (Pong);
+}
+
+message BootstrapRequest {
+  string province = 1;
+  string isp = 2;
+  int32 maximum_mbps = 3;
+  string client_version = 4;
+  string bootstrap_token = 5;
+  string node_id = 6;
+}
+
+message BootstrapResponse {
+  bool success = 1;
+  bool should_upgrade = 2;
+  string message = 3;
+  string session_token = 4; // token to use for communicating with the control node thereafter until the exit of the process
+}
+
+message UpgradeRequest {
+  string province = 1;
+  string isp = 2;
+  string session_token = 3;
+  string node_id = 4;
+}
+
+message UpgradeResponse {
+  bool success = 1;
+  string message = 2;
+  string upgrade_url = 3;
+}
+
+message IPResult {
+  string ip_address = 1;
+  int32 latency = 2;
+  int32 speed = 3;
+}
+
+message SpeedtestRequest {
+  repeated string ip_ranges = 1;
+}
+
+message SpeedtestResponse {
+  bool success = 1;
+  string message = 2;
+  string province = 3;
+  string isp = 4;
+  repeated IPResult ip_results = 5;
+  string session_token = 6;
+  string node_id = 7;
+}
+
+message Ping{}
+message Pong{}
