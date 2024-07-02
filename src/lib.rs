@@ -1,8 +1,8 @@
 mod ping;
 
 use faststr::FastStr;
+use log::{info, warn};
 use crate::ping::*;
-use anyhow::Ok;
 use volo_grpc::{ response, Request, Response, Status };
 use std::result::Result;
 use volo_gen::cfst_rpc::*;
@@ -29,6 +29,8 @@ impl CloudflareSpeedtest for S {
             };
 
             drop(bootstrap_look);
+
+            warn!("接收到 BootStrap 初始化信息，但已经完成初始化");
         } else {
             *bootstrap_look = true;
             drop(bootstrap_look);
@@ -50,6 +52,8 @@ impl CloudflareSpeedtest for S {
                 message: "Done".into(),
                 session_token: req.get_ref().bootstrap_token.clone(),
             };
+
+            info!("接收到 BootStrap 初始化信息，成功完成初始化");
         }
 
         Result::Ok(Response::new(response))
