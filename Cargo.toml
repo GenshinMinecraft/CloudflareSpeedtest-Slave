@@ -3,22 +3,20 @@ name = "cloudflare_speedtest_slave"
 version = "0.1.0"
 edition.workspace = true
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 volo-gen = { path = "./volo-gen" }
 volo = { version = "0.10.1", features = [ "native-tls" ] }
 volo-grpc = { version = "0.10.0", features = [ "native-tls" ] }
 pilota.workspace = true
-
 anyhow.workspace = true
 tokio = { workspace = true, features = ["full"] }
 log = "0.4.22"
 fastping-rs = "0.2.4"
 simple_logger = "5.0.0"
-once_cell = "1.19.0"
 faststr = "0.2.19"
 volo-http = "0.2.8"
+lazy_static = "1.5.0"
+clap = { version = "4.5.8", features = ["derive"] }
 
 [profile.release]
 opt-level = 3
@@ -39,12 +37,10 @@ resolver = "2"
 edition = "2021"
 
 [workspace.dependencies]
-# we recommend to use the latest framework version for new features and bug fixes
 volo = "*"
 volo-build = "*"
 volo-grpc = "*"
 pilota = "*"
-
 anyhow = "1"
 futures = "0.3"
 tokio = "1"
@@ -56,11 +52,9 @@ native-tls = [
     "__tls",
     "volo/native-tls",
     "volo-grpc/native-tls",
-#    "volo-http/native-tls",
 ]
 native-tls-vendored = [
     "__tls",
     "volo/native-tls-vendored",
     "volo-grpc/native-tls-vendored",
-#    "volo-http/native-tls-vendored",
 ]
