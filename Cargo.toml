@@ -7,16 +7,18 @@ edition.workspace = true
 volo-gen = { path = "./volo-gen" }
 volo = { version = "0.10.1", features = [ "native-tls" ] }
 volo-grpc = { version = "0.10.0", features = [ "native-tls" ] }
-pilota.workspace = true
-anyhow.workspace = true
+#pilota.workspace = true
+#anyhow.workspace = true
 tokio = { workspace = true, features = ["full"] }
 log = "0.4.22"
 fastping-rs = "0.2.4"
 simple_logger = "5.0.0"
 faststr = "0.2.19"
-volo-http = "0.2.8"
 lazy_static = "1.5.0"
 clap = { version = "4.5.8", features = ["derive"] }
+uuid = { version = "1.9.1", features = ["v4"] }
+tokio-stream = "0.1.15"
+
 
 [profile.release]
 opt-level = 3
