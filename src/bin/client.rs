@@ -167,6 +167,9 @@ async fn main() {
 
     // 发送 Speedtest
     loop {
+
+        info!("Send Speedtest Request");
+
         let process_message = match send_speedtest().await {
             Ok(tmp) => tmp,
             Err(e) => {
@@ -174,6 +177,8 @@ async fn main() {
                 break;
             },
         };
+
+        info!("Got Speedtest Request");
 
         let ip_ranges = process_message.ip_ranges;
         
@@ -185,12 +190,16 @@ async fn main() {
             },
         };
 
+        info!("Ping IPs");
+
         let ips_rtt = ping_ips(ips.clone()).await;
         
         let mut ips_rtt_map: HashMap<String, f64> = HashMap::new();
         for (key, value) in ips.into_iter().zip(ips_rtt.into_iter()) {
             ips_rtt_map.insert(key, value);
         }
+
+        info!("Speedtesting");
 
         let mut speed_ips: Vec<String> = Vec::new();
         for (ip, ping_rtt) in ips_rtt_map.clone() {
