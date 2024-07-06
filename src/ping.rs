@@ -2,7 +2,6 @@ use std::time::Duration;
 use fastping_rs::PingResult::{Idle, Receive};
 use fastping_rs::Pinger;
 use log::{info, warn, error};
-use faststr::FastStr;
 use std::error::Error;
 use ipnetwork::IpNetwork;
 
@@ -62,7 +61,7 @@ pub async fn ping_ips(ips: Vec<String>) -> Vec<f64>{
 }
 
 
-pub async fn ip_cidr_to_ips(ip_cidr: Vec<FastStr>) -> Result<Vec<String>, Box<dyn Error>> {
+pub async fn ip_cidr_to_ips(ip_cidr: Vec<String>) -> Result<Vec<String>, Box<dyn Error>> {
     let ip_cidr_string: Vec<String> = ip_cidr.into_iter().map(|fs| fs.to_string()).collect(); 
 
     let mut ip_addresses: Vec<String> = Vec::new();

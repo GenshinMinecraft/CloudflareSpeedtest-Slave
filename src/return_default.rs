@@ -1,7 +1,7 @@
 pub fn return_default_server() -> String {
-    return "1.1.1.1:1145".to_string();
+    return "47.238.130.86:2333".to_string();
 }
 
 pub fn return_default_bootstrap_token() -> String {
-    return "admin".to_string();
+    return "cfst1234".to_string();
 }

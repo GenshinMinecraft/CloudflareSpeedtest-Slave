@@ -1,70 +1,22 @@
 [package]
-name = "cloudflare_speedtest_slave"
+name = "CloudflareSpeedtest-Slave-Master"
 version = "0.1.0"
-edition.workspace = true
-
-[dependencies]
-volo-gen = { path = "./volo-gen" }
-volo = { version = "0.10.1", features = [ "native-tls" ] }
-volo-grpc = { version = "0.10.0", features = [ "native-tls" ] }
-#pilota.workspace = true
-#anyhow.workspace = true
-tokio = { workspace = true, features = ["full"] }
-log = "0.4.22"
-fastping-rs = "0.2.4"
-simple_logger = "5.0.0"
-faststr = "0.2.19"
-lazy_static = "1.5.0"
-clap = { version = "4.5.8", features = ["derive"] }
-uuid = { version = "1.9.1", features = ["v4"] }
-tokio-stream = "0.1.15"
-native-tls = "0.2.12"
-url = "2.5.2"
-ipnetwork = "0.20.0"
-rand = "0.8.5"
-
-
-[profile.release]
-opt-level = 3
-debug = true
-debug-assertions = false
-overflow-checks = false
-lto = true
-panic = 'unwind'
-incremental = false
-codegen-units = 1
-rpath = false
-
-[workspace]
-members = ["volo-gen"]
-resolver = "2"
-
-[workspace.package]
 edition = "2021"
 
-[workspace.dependencies]
-volo = "*"
-volo-build = "*"
-volo-grpc = "*"
-pilota = "*"
-anyhow = "1"
-futures = "0.3"
-tokio = "1"
+[dependencies]
+clap = { version = "4.5.8", features = ["derive"] }
+fastping-rs = "0.2.4"
+ipnetwork = "0.20.0"
+log = "0.4.22"
+native-tls = "0.2.12"
+prost = "0.12.6"
+simple_logger = "5.0.0"
+tokio = { version = "1.38.0", features = ["full"] }
+tokio-stream = "0.1.15"
+tonic = "0.11.0"
+tonic-build = "0.11.0"
+url = "2.5.2"
+uuid = { version = "1.9.1", features = [ "v4" ] }
 
-[[bin]]
-name = "client"
-path = "src/bin/client.rs"
-
-[features]
-__tls = []
-rustls = ["__tls", "volo/rustls", "volo-grpc/rustls"]
-native-tls = [
-    "__tls",
-    "volo/native-tls",
-    "volo-grpc/native-tls",
-]
-native-tls-vendored = [
-    "__tls",
-    "volo/native-tls-vendored",
-    "volo-grpc/native-tls-vendored",
-]
+[build-dependencies]
+tonic-build = "0.11.0"
