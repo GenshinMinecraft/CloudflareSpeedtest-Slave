@@ -216,7 +216,7 @@ async fn main() {
         let mut the_last_ip_speed: i32 = 0;
         for speed_ip in speed_ips {
             let ip_bandwidth = speed_one_ip(process_message.speed_url.to_string(), speed_ip.clone(), 5).await;
-            if ip_bandwidth >= process_message.minimum_mbps as i128 {
+            if ip_bandwidth >= process_message.minimum_mbps as f64 {
                 the_last_ip = speed_ip;
                 the_last_ip_speed = ip_bandwidth as i32;
                 break;
