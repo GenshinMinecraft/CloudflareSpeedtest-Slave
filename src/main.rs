@@ -32,6 +32,10 @@ struct Args {
     /// Bandwidth (in Mbps)
     #[arg(short, long, default_value_t = 500)]
     max_mbps: i32,
+
+    /// Enable Debug Log
+    #[arg(long, default_value_t = false)]
+    debug: bool,
 }
 
 fn init_args() -> Args {
@@ -142,8 +146,12 @@ async fn send_speedtest_result(ip: String, ping: i32, speed: i32, mut client: Cl
 
 #[tokio::main]
 async fn main() {
-    init_with_level(log::Level::Debug).unwrap();
     let args: Args = init_args();
+    if args.debug {
+        init_with_level(log::Level::Debug).unwrap();
+    } else {
+        init_with_level(log::Level::Info).unwrap();
+    }
     let client: CloudflareSpeedtestClient<Channel> = init_client(args.server).await;
 
     let (_, node_id, session_token) = send_bootstrap(client.clone(), args.max_mbps, args.token.clone()).await;
