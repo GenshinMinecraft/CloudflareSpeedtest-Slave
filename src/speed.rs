@@ -4,15 +4,18 @@ use std::{
     time::Instant,
 };
 
+use log::{error, info};
 use url::Url;
 use native_tls::TlsConnector;
 
 pub async fn speed_one_ip(speedtest_url: String, ip: String, speed_time: u32) -> f64 {
 
+    info!("开始测速");
+    
     let url = match Url::parse(speedtest_url.as_str()) {
         Ok(parsed_url) => parsed_url,
         Err(_) => {
-            eprintln!("Failed to parse URL.");
+            error!("无法正确解析 Speedtest URL");
             return -1.0;
         },
     };
@@ -59,9 +62,8 @@ pub async fn speed_one_ip(speedtest_url: String, ip: String, speed_time: u32) ->
     // 将速度转换为其他单位
     let download_speed_kbps: f64 = download_speed_bps / 1000.0;
     let download_speed_mbps: f64 = download_speed_kbps / 1000.0;
-    let download_speed_gbps: f64 = download_speed_mbps / 1000.0;
 
-    println!("{} Download speed: {:.2} Mbps", ip, download_speed_mbps);
- 
+    info!("IP: {}, 速度: {}mbps", ip, download_speed_mbps);
+
     download_speed_mbps
 }

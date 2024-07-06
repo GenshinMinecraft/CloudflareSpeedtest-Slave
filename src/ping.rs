@@ -1,19 +1,12 @@
-use std::time::Duration;
+use std::collections::HashMap;
 use fastping_rs::PingResult::{Idle, Receive};
 use fastping_rs::Pinger;
-use log::{info, warn, error};
+use log::{debug, error};
 use std::error::Error;
 use ipnetwork::IpNetwork;
 
-fn duration_to_f64(duration: Duration) -> f64 {
-    // 获取整个秒数
-    let seconds = duration.as_secs() as f64;
-    let nanos = duration.subsec_nanos() as f64 / 1e9;
-    return seconds + nanos;
-}
-
-pub async fn ping_ips(ips: Vec<String>) -> Vec<f64>{
-    let (pinger, results) = match Pinger::new(Some(1000), Some(56)) {
+pub async fn ping_ips(ips: Vec<String>, maximum_ping: i32) -> HashMap<String, u128> {
+    let (pinger, results) = match Pinger::new(Some(maximum_ping as u64), Some(56)) {
         Ok((pinger, results)) => (pinger, results),
         Err(e) => {
             error!("新建 Pinger 时候出错 (不是哥们这都能报错？): {}", e);
@@ -27,25 +20,25 @@ pub async fn ping_ips(ips: Vec<String>) -> Vec<f64>{
 
     pinger.run_pinger();
 
-    let mut ips_rtt: Vec<f64> = Vec::new();
+    let mut ips_rtt_map: HashMap<String, u128> = HashMap::new();
 
     loop {
         match results.recv() {
             Ok(result) => match result {
                 Idle { addr } => {
-                    warn!("无效/不可达的 IP:  {}.", addr);
-                    ips_rtt.push(-1.0);
+                    debug!("无效/不可达的 IP:  {}.", addr);
+                    ips_rtt_map.insert(addr.to_string(), u128::MAX);
                     
-                    if ips_rtt.len() == ips.len() {
+                    if ips_rtt_map.len() == ips.len() {
                         pinger.stop_pinger();
                         break;
                     }
                 }
                 Receive { addr, rtt } => {
-                    info!("存活 IP: {} in {:?}.", addr, rtt);
-                    ips_rtt.push(duration_to_f64(rtt));
+                    debug!("存活 IP: {} in {:?}.", addr, rtt);
+                    ips_rtt_map.insert(addr.to_string(), rtt.as_millis());
 
-                    if ips_rtt.len() == ips.len() {
+                    if ips_rtt_map.len() == ips.len() {
                         pinger.stop_pinger();
                         break;
                     }
@@ -57,7 +50,7 @@ pub async fn ping_ips(ips: Vec<String>) -> Vec<f64>{
         }
     }
 
-    return ips_rtt;
+    return ips_rtt_map;
 }
 
 
