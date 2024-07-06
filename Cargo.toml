@@ -20,6 +20,8 @@ uuid = { version = "1.9.1", features = ["v4"] }
 tokio-stream = "0.1.15"
 native-tls = "0.2.12"
 url = "2.5.2"
+ipnetwork = "0.20.0"
+rand = "0.8.5"
 
 
 [profile.release]
@@ -48,6 +50,10 @@ pilota = "*"
 anyhow = "1"
 futures = "0.3"
 tokio = "1"
+
+[[bin]]
+name = "client"
+path = "src/bin/client.rs"
 
 [features]
 __tls = []

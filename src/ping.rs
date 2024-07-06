@@ -2,7 +2,9 @@ use std::time::Duration;
 use fastping_rs::PingResult::{Idle, Receive};
 use fastping_rs::Pinger;
 use log::{info, warn, error};
-use volo_gen::cfst_rpc::*;
+use faststr::FastStr;
+use std::error::Error;
+use ipnetwork::IpNetwork;
 
 fn duration_to_f64(duration: Duration) -> f64 {
     // 获取整个秒数
@@ -11,7 +13,7 @@ fn duration_to_f64(duration: Duration) -> f64 {
     return seconds + nanos;
 }
 
-async fn ping_ips(ips: Vec<String>) -> Vec<f64>{
+pub async fn ping_ips(ips: Vec<String>) -> Vec<f64>{
     let (pinger, results) = match Pinger::new(Some(1000), Some(56)) {
         Ok((pinger, results)) => (pinger, results),
         Err(e) => {
@@ -57,4 +59,20 @@ async fn ping_ips(ips: Vec<String>) -> Vec<f64>{
     }
 
     return ips_rtt;
+}
+
+
+pub async fn ip_cidr_to_ips(ip_cidr: Vec<FastStr>) -> Result<Vec<String>, Box<dyn Error>> {
+    let ip_cidr_string: Vec<String> = ip_cidr.into_iter().map(|fs| fs.to_string()).collect(); 
+
+    let mut ip_addresses: Vec<String> = Vec::new();
+
+    for ips in ip_cidr_string {
+        let network= ips.parse::<IpNetwork>()?;
+        for single_ip in network.iter() {
+            ip_addresses.push(single_ip.to_string());
+        }
+    }
+
+    Ok(ip_addresses)
 }

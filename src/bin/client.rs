@@ -1,14 +1,20 @@
 use std::{
-    io::{Read, Write},
-    net::{TcpStream, SocketAddr},
-    process::exit,
-    sync::Mutex,
-    time::Instant,
+    net::SocketAddr, process::exit, sync::Mutex
 };
 
-use native_tls::TlsConnector;
+#[path = "../ping.rs"]
+mod ping;
+#[path = "../speed.rs"]
+mod speed;
+#[path = "../return_default.rs"]
+mod return_default;
+
+use crate::ping::ping_ips;
+use crate::speed::speed_one_ip;
+use crate::return_default::*;
+
+use ping::ip_cidr_to_ips;
 use tokio_stream::StreamExt;
-use url::Url;
 use uuid::Uuid;
 use volo_grpc::Status;
 use volo_gen::cfst_rpc::*;
@@ -17,10 +23,7 @@ use log::{*, Level::*};
 use simple_logger::*;
 use clap::Parser;
 use lazy_static::lazy_static;
-use std::time::Duration;
-use fastping_rs::PingResult::{Idle, Receive};
-use fastping_rs::Pinger;
-
+use std::collections::HashMap;
 
 static ARGS: Mutex<Args> = Mutex::new(Args { server: String::new(), token: String::new(), max_mbps: 500 });
 static SERVER_URL: Mutex<String> = Mutex::new(String::new());
@@ -42,13 +45,7 @@ lazy_static! {
     };
 }
 
-fn return_default_server() -> String {
-    return "1.1.1.1:1145".to_string();
-}
 
-fn return_default_bootstrap_token() -> String {
-    return "admin".to_string();
-}
 
 /// Cloudflare IP Speedtest Backend
 #[derive(Parser, Debug, Clone)]
@@ -84,113 +81,6 @@ async fn init_client(server_url: String) {
 
     let _ = &CLIENT;
     return;
-}
-
-async fn speed_one_ip(speedtest_url: String, ip: String, speed_time: u32) -> i128 {
-
-    let url = match Url::parse(speedtest_url.as_str()) {
-        Ok(parsed_url) => parsed_url,
-        Err(_) => {
-            eprintln!("Failed to parse URL.");
-            return -1;
-        },
-    };
-
-    let domain = url.domain().unwrap();
-    let port = url.port().unwrap_or(443);
-    let path = url.path();
-
-    let stream = TcpStream::connect(format!("{}:{}", ip, port)).unwrap();
-    let connector = TlsConnector::builder().build().unwrap();
-    let mut stream = connector.connect(domain, stream).unwrap();
-    let request = format!(
-        "GET {} HTTP/1.1\r\nHost: {}\r\nConnection: close\r\n\r\n",
-        path, domain
-    );
-
-    let start_time = Instant::now();
-    let mut buffer = [0; 10240];
-    let mut data = 0;
-
-    stream.write_all(request.as_bytes()).unwrap();
-
-    loop {
-        match stream.read(&mut buffer) {
-            Ok(0) => break, 
-            Ok(n) => {
-                data += n;
-                
-                if start_time.elapsed().as_secs_f64() >= speed_time as f64 {
-                    break;
-                }
-            },
-            Err(_e) => break,
-        }
-    }
-
-    let time_seconds = start_time.elapsed().as_secs(); // 下载所花的时间，单位：秒，类型为 u64
-    let megabytes_downloaded = data as f64 / 1_048_576.0;
-    let time_seconds_f64 = time_seconds as f64;
-    let download_speed_megabytes_per_second = megabytes_downloaded / time_seconds_f64;
-    let download_speed_megabits_per_second = download_speed_megabytes_per_second * 8.0;
-
-    download_speed_megabits_per_second.round() as i128
-}
-
-
-fn duration_to_f64(duration: Duration) -> f64 {
-    // 获取整个秒数
-    let seconds = duration.as_secs() as f64;
-    let nanos = duration.subsec_nanos() as f64 / 1e9;
-    return seconds + nanos;
-}
-
-async fn ping_ips(ips: Vec<String>) -> Vec<f64>{
-    let (pinger, results) = match Pinger::new(Some(1000), Some(56)) {
-        Ok((pinger, results)) => (pinger, results),
-        Err(e) => {
-            error!("新建 Pinger 时候出错 (不是哥们这都能报错？): {}", e);
-            panic!("{}", e)
-        },
-    };
-
-    for ip in ips.clone() {
-        pinger.add_ipaddr(&ip);
-    }
-
-    pinger.run_pinger();
-
-    let mut ips_rtt: Vec<f64> = Vec::new();
-
-    loop {
-        match results.recv() {
-            Ok(result) => match result {
-                Idle { addr } => {
-                    warn!("无效/不可达的 IP:  {}.", addr);
-                    ips_rtt.push(-1.0);
-                    
-                    if ips_rtt.len() == ips.len() {
-                        pinger.stop_pinger();
-                        break;
-                    }
-                }
-                Receive { addr, rtt } => {
-                    info!("存活 IP: {} in {:?}.", addr, rtt);
-                    ips_rtt.push(duration_to_f64(rtt));
-
-                    if ips_rtt.len() == ips.len() {
-                        pinger.stop_pinger();
-                        break;
-                    }
-                }
-            },
-            Err(e) => {
-                error!("获取 IP 测试结果时出现错误: {}", e);    
-            },
-        }
-    }
-
-    return ips_rtt;
 }
 
 async fn send_bootstrap() -> BootstrapResponse {
@@ -285,7 +175,63 @@ async fn main() {
             },
         };
 
-        let ip_list = process_message.ip_ranges;
+        let ip_ranges = process_message.ip_ranges;
+        
+        let ips = match ip_cidr_to_ips(ip_ranges).await {
+            Ok(tmp) => tmp,
+            Err(e) => {
+                error!("Can not parse the ip CIDR: {}", e);
+                continue;
+            },
+        };
+
+        let ips_rtt = ping_ips(ips.clone()).await;
+        
+        let mut ips_rtt_map: HashMap<String, f64> = HashMap::new();
+        for (key, value) in ips.into_iter().zip(ips_rtt.into_iter()) {
+            ips_rtt_map.insert(key, value);
+        }
+
+        let mut speed_ips: Vec<String> = Vec::new();
+        for (ip, ping_rtt) in ips_rtt_map.clone() {
+            if (ping_rtt * 1000.0).round() as i32 > process_message.maximum_ping {
+                speed_ips.push(ip);
+            } else {
+                continue;
+            }
+        }
+
+//        let random_speed_ips: Vec<String> = speed_ips.choose_multiple(&mut thread_rng(), 10).cloned().collect();
+
+        let mut the_last_ip = String::new();
+        let mut the_last_ip_speed: i32 = 0;
+        for speed_ip in speed_ips {
+            let ip_bandwidth = speed_one_ip(process_message.speed_url.to_string(), speed_ip.clone(), 5).await;
+            if ip_bandwidth >= process_message.minimum_mbps as i128 {
+                the_last_ip = speed_ip;
+                the_last_ip_speed = ip_bandwidth as i32;
+                break;
+            }            
+        }
+        let the_last_ip_rtt_borrow: &f64 = ips_rtt_map.get(&the_last_ip).unwrap();
+        let the_last_ip_rtt_sec: f64 = *the_last_ip_rtt_borrow;
+        let the_last_ip_rtt_ms: f64 = the_last_ip_rtt_sec * 1000.0;
+        let the_last_ip_rtt = the_last_ip_rtt_ms.round() as i32;
+
+        let mut ipresult_vec: Vec<IpResult> = Vec::new();
+
+        ipresult_vec.push(IpResult {
+            ip_address: FastStr::new(the_last_ip), 
+            latency: the_last_ip_rtt, 
+            speed: the_last_ip_speed,
+        });
+        let speedtest_result_request: SpeedtestResultRequest = SpeedtestResultRequest { 
+            ip_results: ipresult_vec, 
+            session_token: FastStr::from_string(SESSION_TOKEN.lock().unwrap().to_string()), 
+            node_id: FastStr::from_string(NODE_ID.lock().unwrap().to_string()),
+        };
+
+        CLIENT.speedtest_result(speedtest_result_request);
     }
 }
 
