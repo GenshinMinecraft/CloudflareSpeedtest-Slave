@@ -7,13 +7,13 @@ use std::{
 use url::Url;
 use native_tls::TlsConnector;
 
-pub async fn speed_one_ip(speedtest_url: String, ip: String, speed_time: u32) -> i128 {
+pub async fn speed_one_ip(speedtest_url: String, ip: String, speed_time: u32) -> f64 {
 
     let url = match Url::parse(speedtest_url.as_str()) {
         Ok(parsed_url) => parsed_url,
         Err(_) => {
             eprintln!("Failed to parse URL.");
-            return -1;
+            return -1.0;
         },
     };
 
@@ -49,11 +49,19 @@ pub async fn speed_one_ip(speedtest_url: String, ip: String, speed_time: u32) ->
         }
     }
 
-    let time_seconds = start_time.elapsed().as_secs(); // 下载所花的时间，单位：秒，类型为 u64
-    let megabytes_downloaded = data as f64 / 1_048_576.0;
-    let time_seconds_f64 = time_seconds as f64;
-    let download_speed_megabytes_per_second = megabytes_downloaded / time_seconds_f64;
-    let download_speed_megabits_per_second = download_speed_megabytes_per_second * 8.0;
+    let bytes_downloaded = data; // 假设下载了 1MB 的数据
+    let time_taken: f64 = start_time.elapsed().as_secs_f64();
 
-    download_speed_megabits_per_second.round() as i128
+
+    let bits_downloaded: f64 = bytes_downloaded as f64 * 8.0; // 将字节转换为位
+    let download_speed_bps: f64 = bits_downloaded / time_taken; // 计算位每秒速度
+
+    // 将速度转换为其他单位
+    let download_speed_kbps: f64 = download_speed_bps / 1000.0;
+    let download_speed_mbps: f64 = download_speed_kbps / 1000.0;
+    let download_speed_gbps: f64 = download_speed_mbps / 1000.0;
+
+    println!("{} Download speed: {:.2} Mbps", ip, download_speed_mbps);
+ 
+    download_speed_mbps
 }
