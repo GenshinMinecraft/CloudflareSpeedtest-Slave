@@ -13,7 +13,7 @@ use simple_logger::init_with_level;
 use speed::speed_one_ip;
 use cfst_rpc::*;
 
-use clap::{error, Parser};
+use clap::Parser;
 use tonic::transport::Channel;
 use std::{env, error::Error, process::exit};
 
