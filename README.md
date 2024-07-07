@@ -15,13 +15,14 @@
 ```
 Cloudflare IP Speedtest Backend
 
-Usage: CloudflareSpeedtest-Slave-Master [OPTIONS]
+Usage: CloudflareSpeedtest-Slave [OPTIONS]
 
 Options:
-  -s, --server <SERVER>      Frontend Server Address [default: 47.238.130.86:2333]
-  -t, --token <TOKEN>        Token Setting [default: cfst1234]
+  -s, --server <SERVER>      Frontend Server Address [default: 1.1.1.1:2333]
+  -t, --token <TOKEN>        Token Setting [default: 1145141919810]
   -m, --max-mbps <MAX_MBPS>  Bandwidth (in Mbps) [default: 500]
       --debug                Enable Debug Log
+      --install              Install For Systemd
   -h, --help                 Print help
   -V, --version              Print version
 ```
@@ -30,6 +31,7 @@ Options:
 - `-t`/`--token`: 连接主端时的鉴权 Token，请自行更改
 - `-m`/`--max-mbps`: 报告给主端的最大带宽，单位 Mbps
 - `--debug`: 开启 Debug Log
+- `--install`: 使用 Systemd 安装 CloudflareSpeedtest-Slave，仅限于使用 Systemd 的 Linux
 - `-h`: 显示此帮助
 - `-V`/`--version`: 显示版本
 

@@ -15,7 +15,7 @@ use cfst_rpc::*;
 
 use clap::Parser;
 use tonic::transport::Channel;
-use std::{env, error::Error, process::exit};
+use std::{env, error::Error, fs::{self, File}, io::{self, Write}, process::{exit, Command}};
 
 /// Cloudflare IP Speedtest Backend
 #[derive(Parser, Debug, Clone)]
@@ -36,11 +36,193 @@ struct Args {
     /// Enable Debug Log
     #[arg(long, default_value_t = false)]
     debug: bool,
+
+    /// Install For Systemd
+    #[arg(long, default_value_t = false)]
+    install: bool,
 }
 
 fn init_args() -> Args {
     let args: Args = Args::parse();
     return args;
+}
+
+fn install_systemd(args: Args) {
+    if env::consts::OS != "linux" {
+        error!("Install 功能仅适用于 Linux 系统");
+        exit(1);
+    }
+
+    match fs::metadata("/usr/bin/systemctl") {
+        Ok(_) => {
+            info!("您的系统使用的是 Systemd 服务管理器, 可以正常使用 Install 功能")
+        },
+        Err(_) => {
+            error!("您的系统并非使用 Systemd 作为服务管理器, 无法使用 Install 功能, 请自行配置进程守护");
+            exit(1);
+        },
+    }
+
+    if std::env::var("USER") == Ok("root".to_string()) {
+        info!("正在使用 root 用户");
+    } else {
+        error!("非 root 用户, 请使用 root 用户运行 Install 功能");
+        exit(1);
+    }
+
+    match fs::metadata("/etc/systemd/system/cfst_slave.service") {
+        Ok(_) => {
+            loop {
+                warn!("您的当前系统曾经配置过 Systemd 保活服务, 是否覆盖? (Y/N)");
+                let mut input = String::new();
+                io::stdin().read_line(&mut input).unwrap();
+                input = input.trim().to_uppercase();
+        
+                if input == "Y" {
+                    info!("正在为您覆盖先前的文件");
+                    break;
+                } else if input == "N" {
+                    info!("不覆盖, 退出程序");
+                    exit(1);
+                } else {
+                    warn!("输入错误，请重新输入 Y 或 N。");
+                }
+            }
+        },
+        Err(_) => {},
+    }
+
+    match env::current_exe() {
+        Ok(path_to_bin) => {
+            if path_to_bin.to_str().unwrap() == "/usr/bin/CloudflareSpeedtest-Slave" {
+                info!("无需复制可执行文件");
+            } else {
+                match Command::new("cp").arg("-afr").arg(path_to_bin).arg("/usr/bin/CloudflareSpeedtest-Slave").output() {
+                    Ok(tmp) => {
+                        if tmp.status.success() {
+                            info!("成功将可执行文件复制到 /usr/bin/CloudflareSpeedtest-Slave");
+                        } else {
+                            error!("无法将可执行文件复制到 /usr/bin/CloudflareSpeedtest-Slave");
+                            exit(1);
+                        }
+                    },
+                    Err(e) => {
+                        error!("无法将可执行文件复制到 /usr/bin/CloudflareSpeedtest-Slave: {}", e);
+                        exit(1);
+                    },
+                }
+            }
+        },
+        Err(e) => {
+            error!("无法获取可执行文件路径: {}", e);
+            exit(1);
+        }
+    }    
+
+    let service_config = r#"[Unit]
+Description=Cloudflare Speedtest Slave
+After=network.target
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/CloudflareSpeedtest-Slave -s SERVERURL -t TOKEN -m MAXMBPS
+Restart=always
+"#;
+
+    let mut replaced_service_config = service_config.replace("SERVERURL", args.server.as_str());
+    replaced_service_config = replaced_service_config.replace("TOKEN", args.token.as_str());
+    if args.debug {
+        let tmp = args.max_mbps.to_string() + " --debug";
+        replaced_service_config = replaced_service_config.replace("MAXMBPS", tmp.as_str());
+    } else {
+        replaced_service_config = replaced_service_config.replace("MAXMBPS", args.max_mbps.to_string().as_str());
+    }
+
+    match Command::new("rm").arg("-rf").arg("/etc/systemd/system/cfst_slave.service").output() {
+        Ok(_) => {},
+        Err(e) => {
+            error!("无法删除 /etc/systemd/system/cfst_slave.service: {}", e);
+            exit(1);
+        },
+    }
+
+    let mut service_file = match File::create("/etc/systemd/system/cfst_slave.service") {
+        Ok(tmp) => tmp,
+        Err(e) => {
+            error!("无法新建 /etc/systemd/system/cfst_slave.service: {}", e);
+            exit(1);
+        },
+    };
+
+    match service_file.write_all(replaced_service_config.as_bytes()) {
+        Ok(_) => {
+            info!("成功写入 Systemd 配置文件")
+        },
+        Err(e) => {
+            error!("无法写入 Systemd 配置文件: {}", e);
+            exit(1);
+        },
+    }
+    
+    match Command::new("systemctl").arg("daemon-reload").output() {
+        Ok(tmp) => {
+            if tmp.status.success() {
+                info!("成功运行 systemctl daemon-reload");
+            } else {
+                error!("无法运行 systemctl daemon-reload")
+            }
+        },
+        Err(e) => {
+            error!("无法运行 systemctl daemon-reload: {}", e);
+            exit(1);
+        },
+    }
+
+    match Command::new("systemctl").arg("start").arg("cfst_slave.service").output() {
+        Ok(tmp) => {
+            if tmp.status.success() {
+                info!("成功启动 Cloudflare Speedtest Slave");
+            } else {
+                error!("无法启动 Cloudflare Speedtest Slave")
+            }
+        },
+        Err(e) => {
+            error!("无法启动 Cloudflare Speedtest Slave: {}", e);
+            exit(1);
+        },
+    }
+
+    loop {
+        info!("是否打开开机自启? (Y/N)");
+        let mut input = String::new();
+        io::stdin().read_line(&mut input).unwrap();
+        input = input.trim().to_uppercase();
+
+        if input == "Y" {
+            match Command::new("systemctl").arg("enable").arg("cfst_slave.service").output() {
+                Ok(tmp) => {
+                    if tmp.status.success() {
+                        info!("成功打开开机自启");
+                    } else {
+                        error!("无法打开开机自启")
+                    }
+                },
+                Err(e) => {
+                    error!("无法打开开机自启: {}", e);
+                    exit(1);
+                },
+            }
+            break;
+        } else if input == "N" {
+            info!("不打开, 退出程序");
+            exit(1);
+        } else {
+            warn!("输入错误，请重新输入 Y 或 N。");
+        }
+    }
 }
 
 async fn init_client(server_url: String) -> CloudflareSpeedtestClient<Channel> {
@@ -147,18 +329,22 @@ async fn send_speedtest_result(ip: String, ping: i32, speed: i32, mut client: Cl
 #[tokio::main]
 async fn main() {
 
+    if env::consts::OS == "windows" {
+        error!("天灭 Windows, Linux/OSX 保平安！");
+        error!("由于 fastping-rs 库不支持 Windows, 所以本项目永远不会支持 Windows");
+        error!("即使您在 Windows 环境下编译通过, 也绝不可能正常运行！");
+        error!("如果您真的需要在 Windows 下运行, 请使用其他项目: 暂无");
+        exit(1);
+    }
+
     let args: Args = init_args();
     if args.debug {
         init_with_level(log::Level::Debug).unwrap();
     } else {
         init_with_level(log::Level::Info).unwrap();
     }
-
-    if env::consts::OS == "windows" {
-        error!("天灭 Windows, Linux/OSX 保平安！");
-        error!("由于 fastping-rs 库不支持 Windows, 所以本项目永远不会支持 Windows");
-        error!("即使您在 Windows 环境下编译通过, 也绝不可能正常运行！");
-        error!("如果您真的需要在 Windows 下运行, 请使用其他项目: 暂无");
+    if args.install {
+        install_systemd(args);
         exit(1);
     }
 
