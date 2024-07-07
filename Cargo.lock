@@ -3,8 +3,8 @@
 version = 3
 
 [[package]]
-name = "CloudflareSpeedtest-Slave-Master"
-version = "1.0.0"
+name = "CloudflareSpeedtest-Slave"
+version = "1.0.1"
 dependencies = [
  "clap",
  "fastping-rs",
