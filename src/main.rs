@@ -13,9 +13,9 @@ use simple_logger::init_with_level;
 use speed::speed_one_ip;
 use cfst_rpc::*;
 
-use clap::Parser;
+use clap::{error, Parser};
 use tonic::transport::Channel;
-use std::{error::Error, process::exit};
+use std::{env, error::Error, process::exit};
 
 /// Cloudflare IP Speedtest Backend
 #[derive(Parser, Debug, Clone)]
@@ -80,12 +80,12 @@ async fn send_bootstrap(client: CloudflareSpeedtestClient<Channel>, maximum_mbps
     let session_token: String = response.clone().session_token;
 
     if response.clone().success != true {
-        error!("Bootstrap 信息已成功，但返回错误 (也许是 Bootstrap Token 设置错误): {:?}", response.clone());
+        error!("Bootstrap 信息已成功, 但返回错误 (也许是 Bootstrap Token 设置错误): {:?}", response.clone());
         exit(1);
     }
 
     if response.clone().should_upgrade == true {
-        warn!("该从端需更新，建议更新至最新版本");
+        warn!("该从端需更新, 建议更新至最新版本");
     }
 
     return (response, node_id, session_token);
@@ -146,22 +146,32 @@ async fn send_speedtest_result(ip: String, ping: i32, speed: i32, mut client: Cl
 
 #[tokio::main]
 async fn main() {
+
     let args: Args = init_args();
     if args.debug {
         init_with_level(log::Level::Debug).unwrap();
     } else {
         init_with_level(log::Level::Info).unwrap();
     }
+
+    if env::consts::OS == "windows" {
+        error!("天灭 Windows, Linux/OSX 保平安！");
+        error!("由于 fastping-rs 库不支持 Windows, 所以本项目永远不会支持 Windows");
+        error!("即使您在 Windows 环境下编译通过, 也绝不可能正常运行！");
+        error!("如果您真的需要在 Windows 下运行, 请使用其他项目: 暂无");
+        exit(1);
+    }
+
     let client: CloudflareSpeedtestClient<Channel> = init_client(args.server).await;
 
-    let (_, node_id, session_token) = send_bootstrap(client.clone(), args.max_mbps, args.token.clone()).await;
-
-    info!("当前 Node_ID: {}, Session_token: {}", node_id, session_token);
-
     loop {
+        let (_, node_id, session_token) = send_bootstrap(client.clone(), args.max_mbps, args.token.clone()).await;
+
+        info!("当前 Node_ID: {}, Session_token: {}", node_id, session_token);
+
         let (speedtest_response, need_ping_ips) = match send_speedtest(client.clone(), node_id.clone(), session_token.clone()).await {
             Ok((res, str)) => {
-                info!("成功获取 Speedtest 信息，开始启动测速程序");
+                info!("成功获取 Speedtest 信息, 开始启动测速程序");
                 (res, str)
             },
             Err(e) => {

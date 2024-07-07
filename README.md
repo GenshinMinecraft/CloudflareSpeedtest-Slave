@@ -8,6 +8,8 @@
 
 为 Moohr 开发的 Cloudflare Speedtest 主端**官方钦定**后端，如果有需要自行编写后端的需求可参考该项目
 
+该项目**不支持 Windows** 系统运行，以后也不会支持，Never!
+
 ## 使用
 
 ```

@@ -1,7 +1,5 @@
 use std::{
-    io::{Read, Write},
-    net::TcpStream,
-    time::Instant,
+    io::{Read, Write}, net::TcpStream, time::Instant
 };
 
 use log::{error, info};
@@ -20,13 +18,38 @@ pub async fn speed_one_ip(speedtest_url: String, ip: String, speed_time: u32) ->
         },
     };
 
-    let domain = url.domain().unwrap();
+    let domain = match url.domain() {
+        Some(tmp) => tmp,
+        None => {
+            error!("无法获取测速链接中的域名");
+            return -1.0;
+        },
+    };
     let port = url.port().unwrap_or(443);
     let path = url.path();
 
-    let stream = TcpStream::connect(format!("{}:{}", ip, port)).unwrap();
-    let connector = TlsConnector::builder().build().unwrap();
-    let mut stream = connector.connect(domain, stream).unwrap();
+    let stream = match TcpStream::connect(format!("{}:{}", ip, port)) {
+        Ok(tmp) => tmp,
+        Err(e) => {
+            error!("无法初始化 TcpStream: {}", e);
+            return -1.0;
+        },
+    };
+    let connector = match TlsConnector::builder().build() {
+        Ok(tmp) => tmp,
+        Err(e) => {
+            error!("无法初始化 TlsConnector: {}", e);
+            return  -1.0;
+        },
+    };
+    let mut stream = match connector.connect(domain, stream) {
+        Ok(tmp) => tmp,
+        Err(e) => {
+            error!("无法初始化 TlsStream: {}", e);
+            return -1.0;
+        },
+    };
+    
     let request = format!(
         "GET {} HTTP/1.1\r\nHost: {}\r\nConnection: close\r\n\r\n",
         path, domain
@@ -36,7 +59,15 @@ pub async fn speed_one_ip(speedtest_url: String, ip: String, speed_time: u32) ->
     let mut buffer = [0; 10240];
     let mut data = 0;
 
-    stream.write_all(request.as_bytes()).unwrap();
+    match stream.write_all(request.as_bytes()) {
+        Ok(_) => {
+            
+        },
+        Err(e) => {
+            error!("无法发送请求: {}", e);
+            return -1.0;
+        },
+    }
 
     loop {
         match stream.read(&mut buffer) {
@@ -52,14 +83,13 @@ pub async fn speed_one_ip(speedtest_url: String, ip: String, speed_time: u32) ->
         }
     }
 
-    let bytes_downloaded = data; // 假设下载了 1MB 的数据
+    let bytes_downloaded = data;
     let time_taken: f64 = start_time.elapsed().as_secs_f64();
 
 
-    let bits_downloaded: f64 = bytes_downloaded as f64 * 8.0; // 将字节转换为位
-    let download_speed_bps: f64 = bits_downloaded / time_taken; // 计算位每秒速度
+    let bits_downloaded: f64 = bytes_downloaded as f64 * 8.0; 
+    let download_speed_bps: f64 = bits_downloaded / time_taken; 
 
-    // 将速度转换为其他单位
     let download_speed_kbps: f64 = download_speed_bps / 1000.0;
     let download_speed_mbps: f64 = download_speed_kbps / 1000.0;
 
