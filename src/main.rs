@@ -3,6 +3,7 @@ mod ping;
 mod speed;
 mod cfst_rpc;
 
+use reqwest::Client;
 use tokio_stream::StreamExt;
 use uuid::Uuid;
 use cloudflare_speedtest_client::CloudflareSpeedtestClient;
@@ -12,7 +13,6 @@ use ping::*;
 use simple_logger::init_with_level;
 use speed::speed_one_ip;
 use cfst_rpc::*;
-
 use clap::Parser;
 use tonic::transport::Channel;
 use std::{env, error::Error, fs::{self, File}, io::{self, Write}, process::{exit, Command}};
@@ -40,6 +40,10 @@ struct Args {
     /// Install For Systemd
     #[arg(long, default_value_t = false)]
     install: bool,
+
+    /// Disable Auto Upgrade ModeD
+    #[arg(long, default_value_t = false)]
+    disable_auto_upgrade: bool,
 }
 
 fn init_args() -> Args {
@@ -273,6 +277,117 @@ async fn send_bootstrap(client: CloudflareSpeedtestClient<Channel>, maximum_mbps
     return (response, node_id, session_token);
 }
 
+async fn upgrade_bin(mut client: CloudflareSpeedtestClient<Channel>, args: Args, bootstrapres: BootstrapResponse) {
+    if !bootstrapres.should_upgrade {
+        info!("该后端为最新版本, 无需更新");
+        return;
+    } else {
+        info!("该后端需要更新");
+    }
+
+    if args.disable_auto_upgrade {
+        warn!("该后端版本需更新, 但由于配置了 Disable Auto Upgrade, 不予更新");
+        return;
+    }
+
+    info!("开始更新后端");
+
+    let upgrade_message = match client.upgrade(UpgradeRequest {}).await {
+        Ok(tmp) => {
+            let result = tmp.into_inner();
+            if result.success {
+                info!("成功获取更新链接: {}", result.message);
+                result
+            } else {
+                error!("无法获取更新链接, 终止更新继续运行: {}", result.message);
+                return;
+            }
+        },
+        Err(e) => {
+            error!("无法获取更新链接, 终止更新继续运行: {}", e);
+            return;
+        },
+    };
+
+    let version_bin = match Client::new().get(format!("{}-{}-{}", upgrade_message.upgrade_url, env::consts::OS, env::consts::ARCH)).send().await {
+        Ok(tmp) => {
+            if tmp.status().is_success() {
+                tmp
+            } else {
+                error!("无法下载文件 URL: {}, Code: {}, 终止更新继续运行", tmp.url().to_string(), tmp.status().to_string());
+                return ;
+            }
+        },
+        Err(e) => {
+            error!("无法下载文件 URL: {}, 终止更新并继续运行: {}", format!("{}-{}-{}", upgrade_message.upgrade_url, env::consts::OS, env::consts::ARCH), e);
+            return;
+        },
+    };
+
+    let tmp_dir = env::temp_dir();
+    let file_path = tmp_dir.join("CloudflareSpeedtest-Slave");
+
+    match File::create(&file_path) {
+        Ok(mut tmp) => {
+            let binary = match version_bin.bytes().await {
+                Ok(tmp) => tmp,
+                Err(e) => {
+                    error!("无法获取 Binary, 终止更新并继续运行: {}", e);
+                    return;
+                },
+            };
+            match tmp.write_all(&binary) {
+                Ok(_) => {
+                    info!("成功将 Binary 保存到 Temp Dir");
+                },
+                Err(e) => {
+                    error!("无法将 Binary 保存到 Temp Dir, 终止更新并继续运行: {}", e);
+                    return;
+                },
+            }
+
+        },
+        Err(_) => todo!(),
+    }
+
+    match env::current_exe() {
+        Ok(path_to_bin) => {
+            match Command::new("cp").arg("-afr").arg(file_path).arg(path_to_bin).output() {
+                Ok(tmp) => {
+                    if tmp.status.success() {
+                        info!("成功将可执行文件替换");
+                    } else {
+                        error!("无法将可执行文件替换, 终止更新并继续运行");
+                        return;
+                    }
+                },
+                Err(e) => {
+                    error!("无法将可执行文件替换, 终止更新并继续运行: {}", e);
+                    return;
+                },
+            }
+        },
+        Err(e) => {
+            error!("无法获取当前运行程序路径, 终止更新并继续运行: {}", e);
+            return;
+        },
+    }
+    
+    let mut command = Command::new(env::current_exe().unwrap());
+    command.args(env::args().skip(1));
+
+    let _ = match command.spawn() {
+        Ok(_) => {
+            info!("成功启动新程序");
+            exit(1);
+        },
+        Err(e) => {
+            error!("无法启动新程序, 主程序将退出, 请自行重新启动新版本程序: {}", e);
+            exit(1);
+        },
+    };
+}
+
 async fn send_speedtest(client: CloudflareSpeedtestClient<Channel>, node_id: String, session_token: String) -> Result<(SpeedtestResponse, Vec<String>), Box<dyn Error>> {
     let reqwest = SpeedtestRequest {
         session_token,
@@ -348,12 +463,14 @@ async fn main() {
         exit(1);
     }
 
-    let client: CloudflareSpeedtestClient<Channel> = init_client(args.server).await;
+    let client: CloudflareSpeedtestClient<Channel> = init_client(args.clone().server).await;
 
     loop {
-        let (_, node_id, session_token) = send_bootstrap(client.clone(), args.max_mbps, args.token.clone()).await;
+        let (bootstrap_res, node_id, session_token) = send_bootstrap(client.clone(), args.max_mbps, args.token.clone()).await;
 
         info!("当前 Node_ID: {}, Session_token: {}", node_id, session_token);
+
+        upgrade_bin(client.clone(), args.clone(), bootstrap_res.clone()).await;
 
         let (speedtest_response, need_ping_ips) = match send_speedtest(client.clone(), node_id.clone(), session_token.clone()).await {
             Ok((res, str)) => {

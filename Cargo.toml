@@ -1,6 +1,6 @@
 [package]
 name = "CloudflareSpeedtest-Slave"
-version = "1.0.5"
+version = "0.0.1"
 edition = "2021"
 
 [dependencies]
@@ -10,6 +10,8 @@ ipnetwork = "0.20.0"
 log = "0.4.22"
 native-tls = "0.2.12"
 prost = "0.12.6"
+reqwest = { version = "0.12.5", features = ["blocking", "json"]}
+
 simple_logger = "5.0.0"
 tokio = { version = "1.38.0", features = ["full"] }
 tokio-stream = "0.1.15"
