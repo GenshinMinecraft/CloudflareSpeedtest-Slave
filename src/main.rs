@@ -444,15 +444,8 @@ async fn send_speedtest_result(ip: String, ping: i32, speed: i32, mut client: Cl
 #[tokio::main]
 async fn main() {
 
-    if env::consts::OS == "windows" {
-        error!("天灭 Windows, Linux/OSX 保平安！");
-        error!("由于 fastping-rs 库不支持 Windows, 所以本项目永远不会支持 Windows");
-        error!("即使您在 Windows 环境下编译通过, 也绝不可能正常运行！");
-        error!("如果您真的需要在 Windows 下运行, 请使用其他项目: 暂无");
-        exit(1);
-    }
-
     let args: Args = init_args();
+    
     if args.debug {
         init_with_level(log::Level::Debug).unwrap();
     } else {
@@ -460,6 +453,14 @@ async fn main() {
     }
     if args.install {
         install_systemd(args);
+        exit(1);
+    }
+
+    if env::consts::OS == "windows" {
+        error!("天灭 Windows, Linux/OSX 保平安！");
+        error!("由于 fastping-rs 库不支持 Windows, 所以本项目永远不会支持 Windows");
+        error!("即使您在 Windows 环境下编译通过, 也绝不可能正常运行！");
+        error!("如果您真的需要在 Windows 下运行, 请使用其他项目: 暂无");
         exit(1);
     }
 
