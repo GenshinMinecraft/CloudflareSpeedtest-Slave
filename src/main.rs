@@ -350,6 +350,16 @@ async fn upgrade_bin(mut client: CloudflareSpeedtestClient<Channel>, args: Args,
         Err(_) => todo!(),
     }
 
+    match Command::new("chmod").arg("+x").arg(file_path.clone()).output() {
+        Ok(_) => {
+            info!("成功添加可执行权限");
+        },
+        Err(e) => {
+            error!("无法添加可执行权限, 终止更新并继续运行: {}", e);
+            return;
+        },
+    }
+
     match env::current_exe() {
         Ok(path_to_bin) => {
             match Command::new("cp").arg("-afr").arg(file_path).arg(path_to_bin).output() {
