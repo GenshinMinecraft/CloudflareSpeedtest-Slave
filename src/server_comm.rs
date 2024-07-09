@@ -1,11 +1,18 @@
-use std::error::Error;
-use std::process::exit;
-use tokio_stream::StreamExt;
-use uuid::Uuid;
+use std::{
+    error::Error,
+    process::exit,
+};
+
+use crate::{
+    cfst_rpc::*,
+    cloudflare_speedtest_client::CloudflareSpeedtestClient,
+    ping::ip_cidr_to_ips,
+};
+
 use log::{debug, error, info, warn};
+use tokio_stream::StreamExt;
 use tonic::transport::Channel;
-use crate::{cfst_rpc::*, ping::ip_cidr_to_ips};
-use crate::cloudflare_speedtest_client::CloudflareSpeedtestClient;
+use uuid::Uuid;
 
 /**
  * 异步初始化CloudflareSpeedtest客户端。

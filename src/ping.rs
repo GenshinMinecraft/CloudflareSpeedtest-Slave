@@ -1,9 +1,11 @@
-use std::collections::HashMap;
-use fastping_rs::PingResult::{Idle, Receive};
-use fastping_rs::Pinger;
-use log::{debug, error};
-use std::error::Error;
+use std::{
+    collections::HashMap,
+    error::Error,
+};
+
+use fastping_rs::{PingResult::{Idle, Receive}, Pinger};
 use ipnetwork::IpNetwork;
+use log::{debug, error};
 
 /// 异步发送ping请求到指定的IP地址列表，并返回每个地址的响应时间。
 /// 

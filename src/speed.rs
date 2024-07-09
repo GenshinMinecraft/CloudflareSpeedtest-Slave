@@ -1,12 +1,13 @@
 use std::{
-    io::{Read, Write}, net::TcpStream, time::Instant
+    io::{Read, Write},
+    net::TcpStream,
+    sync::Arc,
+    time::Instant,
 };
 
 use log::{error, info};
-use url::Url;
-use std::sync::Arc;
-
 use rustls::RootCertStore;
+use url::Url;
 
 /**
  * 测量给定IP地址和URL的下载速度。

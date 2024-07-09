@@ -4,11 +4,13 @@ use std::{
     io::{self, Write},
     process::{exit, Command},
 };
+
 use crate::{
     args::Args,
     cfst_rpc::*,
     cloudflare_speedtest_client::CloudflareSpeedtestClient,
 };
+
 use log::{error, info, warn};
 use reqwest::Client;
 use tonic::transport::Channel;
