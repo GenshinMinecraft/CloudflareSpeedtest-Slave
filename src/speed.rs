@@ -4,7 +4,6 @@ use std::{
 
 use log::{error, info};
 use url::Url;
-use std::net::TcpStream;
 use std::sync::Arc;
 
 use rustls::RootCertStore;
@@ -48,7 +47,7 @@ pub async fn speed_one_ip(speedtest_url: String, ip: String, speed_time: u32) ->
 
 //    let server_name = url.try_into().unwrap();
 
-    let mut conn = rustls::ClientConnection::new(Arc::new(config), url).unwrap();
+    let mut conn = rustls::ClientConnection::new(Arc::new(config), url.into()).unwrap();
 
     let sock = match TcpStream::connect(format!("{}:{}", ip, port)) {
         Ok(tmp) => tmp,
