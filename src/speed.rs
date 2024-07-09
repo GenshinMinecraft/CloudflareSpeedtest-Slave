@@ -1,15 +1,28 @@
 use std::{
-    io::{Read, Write}, net::TcpStream, time::Instant
+    io::{Read, Write}, net::{SocketAddr, TcpStream}, time::Instant
 };
 
 use log::{error, info};
 use url::Url;
-use native_tls::TlsConnector;
+use std::net::TcpStream;
+use std::sync::Arc;
+
+use rustls::RootCertStore;
 
 pub async fn speed_one_ip(speedtest_url: String, ip: String, speed_time: u32) -> f64 {
-
-    info!("开始测速");
+    info!("开始测速 IP: {}, URL: {}", ip, speedtest_url);
     
+    // 设置 CA 证书
+    let root_store = RootCertStore {
+        roots: webpki_roots::TLS_SERVER_ROOTS.into(),
+    };
+
+    // 创建 Rustls Config
+    let mut config = rustls::ClientConfig::builder()
+        .with_root_certificates(root_store)
+        .with_no_client_auth();
+
+    // 解析 Url
     let url = match Url::parse(speedtest_url.as_str()) {
         Ok(parsed_url) => parsed_url,
         Err(_) => {
@@ -18,6 +31,7 @@ pub async fn speed_one_ip(speedtest_url: String, ip: String, speed_time: u32) ->
         },
     };
 
+    // 解析 Domain
     let domain = match url.domain() {
         Some(tmp) => tmp,
         None => {
@@ -25,30 +39,26 @@ pub async fn speed_one_ip(speedtest_url: String, ip: String, speed_time: u32) ->
             return -1.0;
         },
     };
+
+    // 解析 Port
     let port = url.port().unwrap_or(443);
+    
+    // 解析路径
     let path = url.path();
 
-    let stream = match TcpStream::connect(format!("{}:{}", ip, port)) {
+    let server_name = url.try_into().unwrap();
+
+    let mut conn = rustls::ClientConnection::new(Arc::new(config), server_name).unwrap();
+
+    let sock = match TcpStream::connect(format!("{}:{}", ip, port)) {
         Ok(tmp) => tmp,
         Err(e) => {
             error!("无法初始化 TcpStream: {}", e);
             return -1.0;
         },
     };
-    let connector = match TlsConnector::builder().build() {
-        Ok(tmp) => tmp,
-        Err(e) => {
-            error!("无法初始化 TlsConnector: {}", e);
-            return  -1.0;
-        },
-    };
-    let mut stream = match connector.connect(domain, stream) {
-        Ok(tmp) => tmp,
-        Err(e) => {
-            error!("无法初始化 TlsStream: {}", e);
-            return -1.0;
-        },
-    };
+
+    let mut tls = rustls::Stream::new(&mut conn, &mut sock);
     
     let request = format!(
         "GET {} HTTP/1.1\r\nHost: {}\r\nConnection: close\r\n\r\n",
@@ -56,13 +66,11 @@ pub async fn speed_one_ip(speedtest_url: String, ip: String, speed_time: u32) ->
     );
 
     let start_time = Instant::now();
-    let mut buffer = [0; 10240];
+    let mut buffer = [0; 1024];
     let mut data = 0;
 
-    match stream.write_all(request.as_bytes()) {
-        Ok(_) => {
-            
-        },
+    match tls.write_all(request.as_bytes()) {
+        Ok(_) => {},
         Err(e) => {
             error!("无法发送请求: {}", e);
             return -1.0;
@@ -70,7 +78,7 @@ pub async fn speed_one_ip(speedtest_url: String, ip: String, speed_time: u32) ->
     }
 
     loop {
-        match stream.read(&mut buffer) {
+        match tls.read(&mut buffer) {
             Ok(0) => break, 
             Ok(n) => {
                 data += n;
@@ -79,7 +87,7 @@ pub async fn speed_one_ip(speedtest_url: String, ip: String, speed_time: u32) ->
                     break;
                 }
             },
-            Err(_e) => break,
+            Err(_) => break,
         }
     }
 
