@@ -47,7 +47,7 @@ pub async fn speed_one_ip(speedtest_url: String, ip: String, speed_time: u32) ->
 
 //    let server_name = url.try_into().unwrap();
 
-    let mut conn = rustls::ClientConnection::new(Arc::new(config), domain.into()).unwrap();
+    let mut conn = rustls::ClientConnection::new(Arc::new(config), domain.parse().unwrap()).unwrap();
 
     let sock = match TcpStream::connect(format!("{}:{}", ip, port)) {
         Ok(tmp) => tmp,
