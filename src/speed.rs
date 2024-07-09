@@ -57,7 +57,7 @@ pub async fn speed_one_ip(speedtest_url: String, ip: String, speed_time: u32) ->
         },
     };
 
-    let mut tls = rustls::Stream::new(&mut conn, &mut sock);
+    let mut tls: rustls::Stream<rustls::ClientConnection, TcpStream> = rustls::Stream::new(&mut conn, &mut sock);
     
     let request = format!(
         "GET {} HTTP/1.1\r\nHost: {}\r\nConnection: close\r\n\r\n",
