@@ -1,26 +1,41 @@
 [package]
 name = "CloudflareSpeedtest-Slave"
 version = "0.0.1"
+authors = ["GenshinMinecrat <gm@highp.ing>"]
 edition = "2021"
+description = "A tool, written in Rust, for testing the speed of Cloudflare IPs."
+readme = "README.md"
+repository = "https://github.com/GenshinMinecraft/CloudflareSpeedtest-Slave"
+license = "WTFPL"
+license-file = "LICENSE"
+keywords = ["Cloudflare", "Speedtest"]
+
 
 [dependencies]
 clap = { version = "4.5.8", features = ["derive"] }
 fastping-rs = "0.2.4"
 ipnetwork = "0.20.0"
 log = "0.4.22"
-native-tls = "0.2.12"
-prost = "0.12.6"
-reqwest = { version = "0.12.5", features = ["blocking", "json"]}
+prost = "0.13.0"
+reqwest = { version = "0.12.5", features = ["json", "blocking", "rustls-tls"], default-features = false }
 rustls = "0.23.11"
-
 simple_logger = "5.0.0"
 tokio = { version = "1.38.0", features = ["full"] }
 tokio-stream = "0.1.15"
-tonic = "0.11.0"
-tonic-build = "0.11.0"
+tonic = "0.12.0"
+tonic-build = "0.12.0"
 url = "2.5.2"
 uuid = { version = "1.9.1", features = [ "v4" ] }
 webpki-roots = "0.26.3"
 
 [build-dependencies]
-tonic-build = "0.11.0"
+tonic-build = "0.12.0"
+
+[profile.release]
+codegen-units = 1
+lto = "fat"
+opt-level = "s"
+panic = "abort"
+
+[build]
+target = "x86_64-unknown-linux-musl"

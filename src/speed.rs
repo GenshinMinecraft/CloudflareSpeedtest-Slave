@@ -1,5 +1,5 @@
 use std::{
-    io::{Read, Write}, net::{SocketAddr, TcpStream}, time::Instant
+    io::{Read, Write}, net::TcpStream, time::Instant
 };
 
 use log::{error, info};
@@ -17,7 +17,7 @@ pub async fn speed_one_ip(speedtest_url: String, ip: String, speed_time: u32) ->
     };
 
     // 创建 Rustls Config
-    let mut config = rustls::ClientConfig::builder()
+    let config = rustls::ClientConfig::builder()
         .with_root_certificates(root_store)
         .with_no_client_auth();
 
@@ -32,7 +32,7 @@ pub async fn speed_one_ip(speedtest_url: String, ip: String, speed_time: u32) ->
 
     // 解析 Domain
     let domain = match url.domain() {
-        Some(tmp) => tmp,
+        Some(tmp) => tmp.to_string(),
         None => {
             error!("无法获取测速链接中的域名");
             return -1.0;
@@ -45,11 +45,11 @@ pub async fn speed_one_ip(speedtest_url: String, ip: String, speed_time: u32) ->
     // 解析路径
     let path = url.path();
 
-    let server_name: rustls::pki_types::ServerName<'_> = url.try_into().unwrap();
+    let server_name: rustls::pki_types::ServerName<'_> = domain.clone().try_into().unwrap();
 
-    let mut conn: rustls::ClientConnection = rustls::ClientConnection::new(Arc::new(config), server_name.unwrap()).unwrap();
+    let mut conn: rustls::ClientConnection = rustls::ClientConnection::new(Arc::new(config), server_name).unwrap();
 
-    let sock = match TcpStream::connect(format!("{}:{}", ip, port)) {
+    let mut sock = match TcpStream::connect(format!("{}:{}", ip, port)) {
         Ok(tmp) => tmp,
         Err(e) => {
             error!("无法初始化 TcpStream: {}", e);
