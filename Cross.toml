@@ -9,3 +9,15 @@ pre-build = [
     "apt-get update",
     "apt-get install --assume-yes musl musl-dev musl-tools protobuf-compiler"
 ]
+
+[target.x86_64-apple-darwin]
+pre-build = [
+    "apt-get update",
+    "apt-get install --assume-yes protobuf-compiler"
+]
+
+[target.aarch64-apple-darwin]
+pre-build = [
+    "apt-get update",
+    "apt-get install --assume-yes protobuf-compiler"
+]

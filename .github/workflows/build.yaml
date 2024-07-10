@@ -25,6 +25,20 @@ jobs:
             name: CloudflareSpeedtest-Slave-linux-aarch64.tar.gz
             command: build
 
+          - release_for: darwin_x86_64
+            os: ubuntu-22.04
+            target: x86_64-apple-darwin
+            bin: CloudflareSpeedtest-Slave
+            name: CloudflareSpeedtest-Slave-darwin-x86_64.tar.gz
+            command: build
+
+          - release_for: darwin_aarch64
+            os: ubuntu-22.04
+            target: aarch64-apple-darwin
+            bin: CloudflareSpeedtest-Slave
+            name: CloudflareSpeedtest-Slave-darwin-aarch64.tar.gz
+            command: build
+
     runs-on: ${{ matrix.platform.os }}
     steps:
       - name: Checkout
@@ -41,5 +55,5 @@ jobs:
       - name: Upload binary
         uses: actions/upload-artifact@v3
         with:
-          name: All target
+          name: CloudflareSpeedtest-Slave-${{ matrix.platform.target }}
           path: target/${{ matrix.platform.target }}/release/${{ matrix.platform.bin }}
