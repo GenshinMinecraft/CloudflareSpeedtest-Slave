@@ -54,3 +54,7 @@ jobs:
         with:
           name: All target
           path: target/${{ matrix.platform.target }}/release/${{ matrix.platform.bin }}
+      - name: Save Cache
+        uses: Swatinem/rust-cache@v2
+        with: 
+          prefix-key: "AllInOneCache"
