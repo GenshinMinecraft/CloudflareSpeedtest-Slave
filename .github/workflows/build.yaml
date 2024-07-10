@@ -67,7 +67,4 @@ jobs:
         # 配置缓存的前缀键，用于标识和检索缓存。
         # 这里使用"AllInOneCache"作为前缀，以便在后续步骤中恢复缓存。
         with: 
-          prefix-key: "AllInOneCache" 配置缓存的前缀键，用于标识和检索缓存。
-        # 这里使用"AllInOneCache"作为前缀，以便在后续步骤中恢复缓存。
-        with: 
           prefix-key: "AllInOneCache"
