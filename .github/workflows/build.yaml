@@ -54,7 +54,20 @@ jobs:
         with:
           name: All target
           path: target/${{ matrix.platform.target }}/release/${{ matrix.platform.bin }}
+      # 此步骤的目的是保存缓存，以提高后续构建的效率。
       - name: Save Cache
+        # 使用Swatinem/rust-cache动作来执行缓存操作。
+        # 这个动作是通过其版本号v2引用的。
         uses: Swatinem/rust-cache@v2
+        #      # 此步骤的目的是保存缓存，以提高后续构建的效率。
+      - name: Save Cache
+        # 使用Swatinem/rust-cache动作来执行缓存操作。
+        # 这个动作是通过其版本号v2引用的。
+        uses: Swatinem/rust-cache@v2
+        # 配置缓存的前缀键，用于标识和检索缓存。
+        # 这里使用"AllInOneCache"作为前缀，以便在后续步骤中恢复缓存。
+        with: 
+          prefix-key: "AllInOneCache" 配置缓存的前缀键，用于标识和检索缓存。
+        # 这里使用"AllInOneCache"作为前缀，以便在后续步骤中恢复缓存。
         with: 
           prefix-key: "AllInOneCache"
