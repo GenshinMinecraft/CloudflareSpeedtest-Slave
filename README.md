@@ -15,18 +15,19 @@
 ## 使用
 
 ```
-Cloudflare IP Speedtest Backend
+A tool, written in Rust, for testing the speed of Cloudflare IPs.
 
 Usage: CloudflareSpeedtest-Slave [OPTIONS]
 
 Options:
-  -s, --server <SERVER>      Frontend Server Address [default: 1.1.1.1:2333]
-  -t, --token <TOKEN>        Token Setting [default: 1145141919810]
-  -m, --max-mbps <MAX_MBPS>  Bandwidth (in Mbps) [default: 500]
-      --debug                Enable Debug Log
-      --install              Install For Systemd
-  -h, --help                 Print help
-  -V, --version              Print version
+  -s, --server <SERVER>       Frontend Server Address [default: 47.238.130.86:2333]
+  -t, --token <TOKEN>         Token Setting [default: cfst1234]
+  -m, --max-mbps <MAX_MBPS>   Bandwidth (in Mbps) [default: 500]
+      --debug                 Enable Debug Log
+      --install               Install For Systemd
+      --disable-auto-upgrade  Disable Auto Upgrade ModeD
+  -h, --help                  Print help
+  -V, --version               Print version
 ```
 
 - `-s`/`--server`: 指定主端服务器，默认为该项目官方服务器，请自行更改
@@ -34,6 +35,7 @@ Options:
 - `-m`/`--max-mbps`: 报告给主端的最大带宽，单位 Mbps
 - `--debug`: 开启 Debug Log
 - `--install`: 使用 Systemd 安装 CloudflareSpeedtest-Slave，仅限于使用 Systemd 的 Linux
+- `--disable-auto-upgrade`: 禁用自动升级，默认为开启
 - `-h`: 显示此帮助
 - `-V`/`--version`: 显示版本
 
