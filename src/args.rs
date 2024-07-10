@@ -44,7 +44,7 @@ pub struct Args {
  * @return String 返回一个字符串，格式为"IP地址:端口号"。
  */
 fn return_default_server() -> String {
-    return "47.238.130.86:2333".to_string();
+    return "backend.cloudflare.su:2333".to_string();
 }
 
 /**
