@@ -1,5 +1,10 @@
 # CloudflareSpeedtest-Slave
 
+![](https://img.shields.io/github/license/GenshinMinecraft/CloudflareSpeedtest-Slave.svg)
+![GitHub top language](https://img.shields.io/github/languages/top/GenshinMinecraft/CloudflareSpeedtest-Slave)
+![GitHub commit activity](https://img.shields.io/github/commit-activity/w/GenshinMinecraft/CloudflareSpeedtest-Slave)
+![GitHub repo size](https://img.shields.io/github/repo-size/GenshinMinecraft/CloudflareSpeedtest-Slave)
+
 一个轻量级、高性能的 Cloudflare IP Speedtest 后端，采用 Rust 编写
 
 ## 简介
