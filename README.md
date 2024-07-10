@@ -44,6 +44,37 @@ Options:
 - `-h`: 显示此帮助
 - `-V`/`--version`: 显示版本
 
+## Docker 使用
+
+Coming Soon
+
+## 贡献
+
+我们欢迎 Issue 和 Pull Request，也可以前往我们的[内测群组](https://t.me/+Gbqf_XAhVIphZmY1)反馈
+
+## 编译
+
+### Cargo
+
+```bash
+git clone https://github.com/GenshinMinecraft/CloudflareSpeedtest-Slave.git
+cd CloudflareSpeedtest-Slave
+cargo build --release --target x86_64-unknown-linux-musl # Or aarch64-unknown-linux-musl
+./target/x86_64-unknown-linux-musl/release/CloudflareSpeedtest-Slave # Or aarch64-unknown-linux-musl
+```
+
+请注意: 当前我们尚未测试除了 `linux-amd64` 与 `linux-arm64` 的其他平台，当您有其他系统 / 架构的需求，请自行编译
+
+### Docker
+
+请事先将已经编译好的 `arm64` / `amd64` 二进制文件放入本项目根目录下的 `binray/` 文件夹 (没有请自行创建)
+
+需要: `binray/arm64` 与 `binray/amd64`
+
+```bash
+docker buildx build --platform linux/amd64,linux/arm64 .
+```
+
 ## 鸣谢
 
 感谢所有开源工作者！
