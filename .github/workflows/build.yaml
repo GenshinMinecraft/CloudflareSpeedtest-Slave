@@ -1,36 +1,46 @@
+# 定义一个名为Rust Release的GitHub Actions工作流，用于发布Rust程序
 name: Rust Release
 
+# 工作流在push到main分支时触发
 on:
   push:
     branches:
       - "main"
 
+# 定义一个名为release的工作任务
 jobs:
   release:
+    # 工作任务的名称，包含平台信息
     name: Release - ${{ matrix.platform.release_for }}
+    # 使用策略矩阵进行多平台构建
     strategy:
       matrix:
         platform:
+          # Linux x86_64平台的构建配置
           - release_for: linux_x86_64
             os: ubuntu-22.04
             target: x86_64-unknown-linux-musl
             bin: CloudflareSpeedtest-Slave
             name: CloudflareSpeedtest-Slave-linux-x86_64.tar.gz
             command: build
-
+          # Linux aarch64平台的构建配置
           - release_for: linux_aarch64
             os: ubuntu-22.04
             target: aarch64-unknown-linux-musl
             bin: CloudflareSpeedtest-Slave
             name: CloudflareSpeedtest-Slave-linux-aarch64.tar.gz
             command: build
-
+    # 指定任务运行的环境
     runs-on: ${{ matrix.platform.os }}
+    # 定义任务的步骤
     steps:
+      # 检出代码
       - name: Checkout
         uses: actions/checkout@v3
+      # 安装构建所需的依赖库
       - name: Install Lib
         run: sudo apt update && sudo apt install -y protobuf-compiler musl-tools musl-dev musl
+      # 使用cross构建跨平台二进制文件
       - name: Build binary
         uses: houseabsolute/actions-rust-cross@v0
         with:
@@ -38,8 +48,9 @@ jobs:
           target: ${{ matrix.platform.target }}
           args: "--locked --release"
           strip: true
+      # 上传构建的二进制文件作为artifact
       - name: Upload binary
         uses: actions/upload-artifact@v3
         with:
-          name: CloudflareSpeedtest-Slave-${{ matrix.platform.target }}
+          name: All target
           path: target/${{ matrix.platform.target }}/release/${{ matrix.platform.bin }}
