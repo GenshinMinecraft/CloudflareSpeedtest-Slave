@@ -29,8 +29,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Install Protoc
-        run: sudo apt update && sudo apt install -y protobuf-compiler
+      - name: Install Lib
+        run: sudo apt update && sudo apt install -y protobuf-compiler musl-tools musl-dev musl
       - name: Build binary
         uses: houseabsolute/actions-rust-cross@v0
         with:
