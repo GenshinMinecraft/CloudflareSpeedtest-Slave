@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap,
-    error::Error,
+    error::Error, process::exit,
 };
 
 use fastping_rs::{PingResult::{Idle, Receive}, Pinger};
@@ -21,8 +21,8 @@ pub async fn ping_ips(ips: Vec<String>, maximum_ping: i32) -> HashMap<String, u1
         Ok((pinger, results)) => (pinger, results),
         Err(e) => {
             // 日志记录初始化失败的错误, 并panic。
-            error!("新建 Pinger 时候出错 (不是哥们这都能报错？): {}", e);
-            panic!("{}", e)
+            error!("新建 Pinger 时候出错, 这可能是因为您未使用 Root 权限运行或未添加创建原始套接字的权限, 详情请看 https://github.com/GenshinMinecraft/CloudflareSpeedtest-Slave?tab=readme-ov-file#warning : {}", e);
+            exit(1);
         },
     };
 
