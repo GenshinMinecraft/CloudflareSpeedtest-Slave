@@ -72,7 +72,7 @@ async fn main() {
                     (res, str)
                 },
                 Err(e) => {
-                    error!("未能成功获取需要测试的 IP, 正在重试: {}", e);
+                    error!("未能成功获取需要测试的 IP, 正在重新连接服务器: {}", e);
                     break;
                 },
             };

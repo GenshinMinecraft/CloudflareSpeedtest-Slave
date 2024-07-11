@@ -130,6 +130,9 @@ pub async fn send_speedtest(
     debug!("SpeedtestRequest Message: {:?}", reqwest);
 
     // 发送速度测试请求并处理响应
+
+    // BUG: 这里有已知问题: 当 Stream 无法继续获取信息的时候，不会返回 Error，这会导致无法及时重连服务器
+    // 解决方案: 暂无
     let stream = match client.clone().speedtest(reqwest).await {
         Ok(tmp) => tmp.into_inner(),
         Err(e) => return Err(Box::new(e)),
