@@ -1,6 +1,6 @@
 [package]
 name = "CloudflareSpeedtest-Slave"
-version = "0.0.1"
+version = "0.0.2"
 authors = ["GenshinMinecrat <gm@highp.ing>"]
 edition = "2021"
 description = "A tool, written in Rust, for testing the speed of Cloudflare IPs."
