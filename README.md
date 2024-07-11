@@ -17,6 +17,20 @@
 
 在华为仓颉编程语言推出后, 本项目将第一时间使用其开发！
 
+## Warning
+
+该程序在使用时需要新建原始套接字的权限, 如果需要在**非 Root** 权限下使用, 请执行下面的 Bash 代码:
+
+```bash
+sudo setcap cap_net_raw=eip /path/to/binray
+```
+
+有的时候, 您还需要将默认的系统套接字调为更大才能避免 Ping 被堵塞
+
+```bash
+sysctl -w net.core.wmem_default=4194304 # 设置为 4MB, 这足够超多 IP 的测试了
+```
+
 ## 使用
 
 ```
