@@ -25,7 +25,7 @@
 sudo setcap cap_net_raw=eip /path/to/binray
 ```
 
-有的时候, 您还需要将默认的系统套接字调为更大才能避免 Ping 被堵塞
+有的时候, 您还需要将默认的**系统套接字缓存**调为更大才能避免 Ping 被堵塞
 
 ```bash
 sysctl -w net.core.wmem_default=4194304 # 设置为 4MB, 这足够超多 IP 的测试了
