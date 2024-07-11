@@ -30,7 +30,7 @@ pub struct Args {
     pub install: bool,
 
     // 关闭自动更新
-    /// Disable Auto Upgrade ModeD
+    /// Disable Auto Upgrade Mode
     #[arg(long, default_value_t = false)]
     pub disable_auto_upgrade: bool,
 }
