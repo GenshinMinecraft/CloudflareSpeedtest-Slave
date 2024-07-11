@@ -10,7 +10,6 @@ use crate::{
 };
 
 use log::{debug, error, info, warn};
-use tokio_stream::StreamExt;
 use tonic::transport::Channel;
 use uuid::Uuid;
 
@@ -130,30 +129,39 @@ pub async fn send_speedtest(
     debug!("SpeedtestRequest Message: {:?}", reqwest);
 
     // 发送速度测试请求并处理响应
-
-    // BUG: 这里有已知问题: 当 Stream 无法继续获取信息的时候，不会返回 Error，这会导致无法及时重连服务器
-    // 解决方案: 暂无
-    let stream = match client.clone().speedtest(reqwest).await {
+    let mut stream = match client.clone().speedtest(reqwest).await {
         Ok(tmp) => tmp.into_inner(),
         Err(e) => return Err(Box::new(e)),
     };
 
-    // 限制流中的项目数量为1, 因为我们只期望一个响应
-    let mut stream = stream.take(1);
-    // 从流中获取下一个项目（即响应）, 如果没有项目, 则返回错误
-    let response = match stream.next().await {
-        Some(tmp) => tmp?,
-        None => return Err("无法获取任何 Speedtest 回应".into()),
-    };
+    // 该代码解决了无法检测是否与主端断开连接的问题
+    // 让我们感谢 Moohr!
+    // 尝试读取流中的消息并处理可能的错误
+    loop {
+        match stream.message().await {
+            Ok(Some(response)) => {
+                // Process the valid response message here
+                debug!("SpeedtestResponse Message: {:?}", response);
 
-    // 在接收到响应后, 记录响应的详细信息
-    debug!("SpeedtestResponse Message: {:?}", response);
+                // Convert IP ranges to specific IP addresses list
+                let ip_ranges_ips = ip_cidr_to_ips(response.clone().ip_ranges).await?;
 
-    // 将IP范围转换为具体的IP地址列表
-    let ip_ranges_ips = ip_cidr_to_ips(response.clone().ip_ranges).await?;
-
-    // 返回速度测试响应和IP地址列表
-    Ok((response, ip_ranges_ips))
+                // Exit the loop after processing the message or continue as needed
+                return Ok((response, ip_ranges_ips));
+            },
+            Ok(None) => {
+                // The stream was closed by the sender
+                error!("与主端的流传输被迫关闭, 这可能是因为后端网络波动或主端崩溃, 正在尝试重新连接...");
+                // Handle the closure of the stream, possibly attempt to reconnect or exit
+                return Err(Box::new(tonic::Status::aborted("Stream was closed by the sender.")));
+            },
+            Err(e) => {
+                // An error occurred while fetching the next message
+                error!("无法接收主端发送的消息, 正在尝试重新连接: {}", e);
+                return Err(Box::new(e));
+            },
+        }
+    }
 }
 
 /// 异步发送速度测试结果到主端。
