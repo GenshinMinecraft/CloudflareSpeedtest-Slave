@@ -16,7 +16,8 @@ use crate::{
 
 use std::{env, process::exit};
 use cloudflare_speedtest_client::CloudflareSpeedtestClient;
-use log::{debug, error, info};
+use log::{debug, error, info, warn};
+use rustls::crypto::aws_lc_rs;
 use simple_logger::init_with_level;
 use tonic::transport::Channel;
 
@@ -32,13 +33,13 @@ async fn main() {
         init_with_level(log::Level::Info).unwrap();
     }
     
-    // 如果命令行参数包含安装选项，则执行安装操作并退出
+    // 如果命令行参数包含安装选项, 则执行安装操作并退出
     if args.install {
         install_systemd(args);
         exit(1);
     }
 
-    // 检查操作系统是否为Windows，如果是，则输出错误信息并退出
+    // 检查操作系统是否为Windows, 如果是, 则输出错误信息并退出
     if env::consts::OS == "windows" {
         error!("天灭 Windows, Linux/OSX 保平安！");
         error!("由于 fastping-rs 库不支持 Windows, 所以本项目永远不会支持 Windows");
@@ -50,9 +51,11 @@ async fn main() {
     // 初始化Cloudflare Speedtest客户端
     let client: CloudflareSpeedtestClient<Channel> = init_client(args.clone().server).await;
 
-    // 主循环，用于定期执行速度测试
+    let _ = aws_lc_rs::default_provider().install_default().unwrap();
+
+    // 主循环, 用于定期执行速度测试
     loop {
-        // 发送启动请求，获取节点ID和会话令牌
+        // 发送启动请求, 获取节点ID和会话令牌
         let (bootstrap_res, node_id, session_token) = send_bootstrap(client.clone(), args.max_mbps, args.token.clone()).await;
 
         // 日志记录当前节点ID和会话令牌
@@ -61,7 +64,7 @@ async fn main() {
         // 升级客户端二进制文件
         upgrade_bin(client.clone(), args.clone(), bootstrap_res.clone()).await;
 
-        // 发送速度测试请求，获取测试结果和需要ping的IP列表
+        // 发送速度测试请求, 获取测试结果和需要ping的IP列表
         let (speedtest_response, need_ping_ips) = match send_speedtest(client.clone(), node_id.clone(), session_token.clone()).await {
             Ok((res, str)) => {
                 info!("成功获取 Speedtest 信息, 开始启动测速程序");
@@ -73,7 +76,7 @@ async fn main() {
             },
         };
 
-        // 对需要ping的IP进行ping测试，记录延迟
+        // 对需要ping的IP进行ping测试, 记录延迟
         let mut ips_ping: std::collections::HashMap<String, u128> = ping_ips(need_ping_ips, speedtest_response.maximum_ping).await;
         info!("总计 IP 有 {} 个", ips_ping.len());
         debug!("总计 IP: {:?}", ips_ping);
@@ -82,7 +85,7 @@ async fn main() {
         info!("符合条件 IP 有 {} 个", ips_ping.len());
         debug!("符合条件 IP: {:?}", ips_ping);
 
-        // 测试每个IP的速度，选择最快且符合最小速度要求的IP
+        // 测试每个IP的速度, 选择最快且符合最小速度要求的IP
         let mut the_last_ip: String = String::new();
         let mut the_last_ip_ping: i32 = -1;
         let mut the_last_ip_speed: i32 = -1;
@@ -97,6 +100,10 @@ async fn main() {
             } else {
                 continue;
             }
+        }
+
+        if the_last_ip.is_empty() {
+            warn!("在测试完所有的 IP 后, 没有发现符合条件的 IP, 请检查您的网络环境, 或请求主端提供者降低最小带宽要求与 Ping 要求");
         }
 
         // 发送速度测试结果

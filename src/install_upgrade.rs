@@ -17,9 +17,9 @@ use tonic::transport::Channel;
 
 /// 安装并配置 Systemd 服务。
 /// 
-/// 此函数检查当前系统是否为 Linux，并确认是否使用 Systemd 作为服务管理器。
-/// 它还需要以 root 用户身份运行，以复制可执行文件并修改系统服务配置。
-/// 最后，它将根据提供的参数配置并启动一个名为 cfst_slave.service 的 Systemd 服务。
+/// 此函数检查当前系统是否为 Linux, 并确认是否使用 Systemd 作为服务管理器。
+/// 它还需要以 root 用户身份运行, 以复制可执行文件并修改系统服务配置。
+/// 最后, 它将根据提供的参数配置并启动一个名为 cfst_slave.service 的 Systemd 服务。
 pub fn install_systemd(args: Args) {
     // 检查操作系统是否为 Linux
     if env::consts::OS != "linux" {
@@ -210,13 +210,13 @@ Restart=always
     }
 }
 
-// 异步函数，负责检查并执行云flare速度测试客户端的更新。
+// 异步函数, 负责检查并执行云flare速度测试客户端的更新。
 // 参数:
-// - client: 云flare速度测试客户端实例，使用channel进行通信。
-// - args: 命令行参数，包含是否禁用自动升级等信息。
-// - bootstrapres: 启动时从服务器获取的响应，包含是否需要升级的信息。
+// - client: 云flare速度测试客户端实例, 使用channel进行通信。
+// - args: 命令行参数, 包含是否禁用自动升级等信息。
+// - bootstrapres: 启动时从服务器获取的响应, 包含是否需要升级的信息。
 pub async fn upgrade_bin(mut client: CloudflareSpeedtestClient<Channel>, args: Args, bootstrapres: BootstrapResponse) {
-    // 检查是否需要升级，如果不需升级则直接返回。
+    // 检查是否需要升级, 如果不需升级则直接返回。
     if !bootstrapres.should_upgrade {
         info!("该后端为最新版本, 无需更新");
         return;
@@ -224,7 +224,7 @@ pub async fn upgrade_bin(mut client: CloudflareSpeedtestClient<Channel>, args: A
         info!("准备开始更新后端");
     }
 
-    // 如果配置了禁用自动升级，则即使需要升级也不执行更新。
+    // 如果配置了禁用自动升级, 则即使需要升级也不执行更新。
     if args.disable_auto_upgrade {
         warn!("该后端版本需更新, 但由于配置了 Disable Auto Upgrade, 不予更新");
         return;
@@ -236,7 +236,7 @@ pub async fn upgrade_bin(mut client: CloudflareSpeedtestClient<Channel>, args: A
     let upgrade_message = match client.upgrade(UpgradeRequest {}).await {
         Ok(tmp) => {
             let result = tmp.into_inner();
-            // 如果更新请求成功，检查是否成功获取了更新链接。
+            // 如果更新请求成功, 检查是否成功获取了更新链接。
             if result.success {
                 info!("成功获取更新链接: {}", result.message);
                 result
@@ -308,7 +308,7 @@ pub async fn upgrade_bin(mut client: CloudflareSpeedtestClient<Channel>, args: A
         },
     }
 
-    // 复制临时文件到当前执行程序的路径，以替换旧版本。
+    // 复制临时文件到当前执行程序的路径, 以替换旧版本。
     match env::current_exe() {
         Ok(path_to_bin) => {
             match Command::new("cp").arg("-afr").arg(file_path).arg(path_to_bin).output() {
@@ -333,7 +333,7 @@ pub async fn upgrade_bin(mut client: CloudflareSpeedtestClient<Channel>, args: A
         },
     }
     
-    // 启动新的可执行文件，替换当前进程。
+    // 启动新的可执行文件, 替换当前进程。
     let mut command = Command::new(env::current_exe().unwrap());
     command.args(env::args().skip(1));
 

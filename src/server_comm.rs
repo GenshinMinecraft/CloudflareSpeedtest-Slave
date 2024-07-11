@@ -17,23 +17,23 @@ use uuid::Uuid;
 /**
  * 异步初始化CloudflareSpeedtest客户端。
  * 
- * 本函数尝试与指定的服务器建立连接，并返回一个CloudflareSpeedtestClient实例。
- * 如果连接成功，它将打印一条成功连接的消息，并返回客户端实例。
- * 如果连接失败，它将打印连接错误的消息，并退出程序。
+ * 本函数尝试与指定的服务器建立连接, 并返回一个CloudflareSpeedtestClient实例。
+ * 如果连接成功, 它将打印一条成功连接的消息, 并返回客户端实例。
+ * 如果连接失败, 它将打印连接错误的消息, 并退出程序。
  * 
- * @param server_url 服务器URL，用于建立连接。
- * @return CloudflareSpeedtestClient实例，用于后续速度测试操作。
+ * @param server_url 服务器URL, 用于建立连接。
+ * @return CloudflareSpeedtestClient实例, 用于后续速度测试操作。
  */
 pub async fn init_client(server_url: String) -> CloudflareSpeedtestClient<Channel> {
     // 尝试连接到指定的服务器
     let client = match CloudflareSpeedtestClient::connect("http://".to_string() + &server_url).await {
         Ok(tmp) => {
-            // 连接成功，打印成功消息并返回客户端实例
+            // 连接成功, 打印成功消息并返回客户端实例
             info!("成功连接服务器");
             tmp
         },
         Err(e) => {
-            // 连接失败，打印错误消息并退出程序
+            // 连接失败, 打印错误消息并退出程序
             error!("无法连接服务器: {}", e);
             exit(1);
         },
@@ -43,8 +43,8 @@ pub async fn init_client(server_url: String) -> CloudflareSpeedtestClient<Channe
 
 /// 异步发送启动配置请求并处理响应。
 ///
-/// 此函数创建一个唯一的节点ID，构造一个启动请求，并使用给定的CloudflareSpeedtestClient发送该请求。
-/// 它处理可能的错误，检查响应是否成功，并返回相关的响应数据。
+/// 此函数创建一个唯一的节点ID, 构造一个启动请求, 并使用给定的CloudflareSpeedtestClient发送该请求。
+/// 它处理可能的错误, 检查响应是否成功, 并返回相关的响应数据。
 ///
 /// 参数:
 /// - client: 用于发送启动请求的CloudflareSpeedtestClient实例。
@@ -91,7 +91,7 @@ pub async fn send_bootstrap(client: CloudflareSpeedtestClient<Channel>, maximum_
     // 从响应中提取会话令牌
     let session_token: String = response.clone().session_token;
 
-    // 如果响应指示需要升级，则发出警告
+    // 如果响应指示需要升级, 则发出警告
     if response.clone().should_upgrade == true {
         warn!("该从端需更新, 建议更新至最新版本");
     }
@@ -101,10 +101,10 @@ pub async fn send_bootstrap(client: CloudflareSpeedtestClient<Channel>, maximum_
 }
 
 
-/// 异步发送速度测试请求到主端，并返回速度测试响应和IP范围列表。
+/// 异步发送速度测试请求到主端, 并返回速度测试响应和IP范围列表。
 ///
 /// 此函数使用提供的Cloudflare Speedtest客户端、节点ID和会话令牌来发起速度测试请求。
-/// 它首先构建一个速度测试请求，然后发送该请求并处理响应。如果请求成功，它将解析响应中的IP范围，
+/// 它首先构建一个速度测试请求, 然后发送该请求并处理响应。如果请求成功, 它将解析响应中的IP范围, 
 /// 并将这些信息以及原始响应一起返回。
 ///
 /// 参数:
@@ -114,7 +114,7 @@ pub async fn send_bootstrap(client: CloudflareSpeedtestClient<Channel>, maximum_
 ///
 /// 返回值:
 /// - `Result<(SpeedtestResponse, Vec<String>), Box<dyn Error>>`: 包含速度测试响应和IP范围列表的结果。
-/// 如果发生错误，返回一个包含错误详情的Box<dyn Error>。
+/// 如果发生错误, 返回一个包含错误详情的Box<dyn Error>。
 pub async fn send_speedtest(
     client: CloudflareSpeedtestClient<Channel>,
     node_id: String,
@@ -126,7 +126,7 @@ pub async fn send_speedtest(
         node_id,
     };
 
-    // 在发送请求前，记录请求的详细信息
+    // 在发送请求前, 记录请求的详细信息
     debug!("SpeedtestRequest Message: {:?}", reqwest);
 
     // 发送速度测试请求并处理响应
@@ -135,15 +135,15 @@ pub async fn send_speedtest(
         Err(e) => return Err(Box::new(e)),
     };
 
-    // 限制流中的项目数量为1，因为我们只期望一个响应
+    // 限制流中的项目数量为1, 因为我们只期望一个响应
     let mut stream = stream.take(1);
-    // 从流中获取下一个项目（即响应），如果没有项目，则返回错误
+    // 从流中获取下一个项目（即响应）, 如果没有项目, 则返回错误
     let response = match stream.next().await {
         Some(tmp) => tmp?,
         None => return Err("无法获取任何 Speedtest 回应".into()),
     };
 
-    // 在接收到响应后，记录响应的详细信息
+    // 在接收到响应后, 记录响应的详细信息
     debug!("SpeedtestResponse Message: {:?}", response);
 
     // 将IP范围转换为具体的IP地址列表
@@ -155,11 +155,11 @@ pub async fn send_speedtest(
 
 /// 异步发送速度测试结果到主端。
 ///
-/// 此函数接收速度测试的IP地址、ping值和速度，以及一个Cloudflare速度测试客户端，
-/// 用于向主端发送速度测试结果。它还接收一个节点ID和会话令牌，这些可能是用于
+/// 此函数接收速度测试的IP地址、ping值和速度, 以及一个Cloudflare速度测试客户端, 
+/// 用于向主端发送速度测试结果。它还接收一个节点ID和会话令牌, 这些可能是用于
 /// 鉴权或标识测试来源的。
 ///
-/// 返回结果为速度测试响应，或者一个错误盒子。如果成功发送了测试结果，它将返回测试结果的副本。
+/// 返回结果为速度测试响应, 或者一个错误盒子。如果成功发送了测试结果, 它将返回测试结果的副本。
 pub async fn send_speedtest_result(
     ip: String, 
     ping: i32, 
@@ -168,35 +168,35 @@ pub async fn send_speedtest_result(
     node_id: String, 
     session_token: String
 ) -> Result<SpeedtestResultResponse, Box<dyn Error>> {
-    // 构建IP结果对象，包含IP地址、延迟和速度信息。
+    // 构建IP结果对象, 包含IP地址、延迟和速度信息。
     let ipresult = IpResult {
         ip_address: ip,
         latency: ping,
         speed,
     };
 
-    // 将IP结果对象封装成一个vector，以满足请求格式的要求。
+    // 将IP结果对象封装成一个vector, 以满足请求格式的要求。
     let ipresult_vec: Vec<IpResult> = vec![ipresult];
 
-    // 构建速度测试结果请求，包含IP结果、会话令牌和节点ID。
+    // 构建速度测试结果请求, 包含IP结果、会话令牌和节点ID。
     let reqwest = SpeedtestResultRequest {
         ip_results: ipresult_vec,
         session_token,
         node_id,
     };
 
-    // 打印调试信息，显示即将发送的速度测试结果请求。
+    // 打印调试信息, 显示即将发送的速度测试结果请求。
     debug!("SpeedtestResultResponse Message: {:?}", reqwest);
 
-    // 尝试发送速度测试结果请求，并处理结果。
+    // 尝试发送速度测试结果请求, 并处理结果。
     match client.speedtest_result(reqwest).await {
         Ok(tmp) => {
-            // 如果发送成功，记录信息并返回结果的副本。
+            // 如果发送成功, 记录信息并返回结果的副本。
             info!("成功发送 Speedtest Result 信息");
             return Ok(tmp.get_ref().clone());
         },
         Err(e) => {
-            // 如果发送失败，记录错误并返回错误盒子。
+            // 如果发送失败, 记录错误并返回错误盒子。
             error!("无法发送 Speedtest Result 信息: {}", e);
             return Err(Box::new(e));
         },
