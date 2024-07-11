@@ -56,7 +56,16 @@ async fn main() {
     // 主循环, 用于定期执行速度测试
     loop {
         // 发送启动请求, 获取节点ID和会话令牌
-        let (bootstrap_res, node_id, session_token) = send_bootstrap(client.clone(), args.max_mbps, args.token.clone()).await;
+        let (bootstrap_res, node_id, session_token) = match send_bootstrap(client.clone(), args.max_mbps, args.token.clone()).await {
+            Ok(tmp) => {
+                info!("成功获取 Bootstrap 信息");
+                tmp
+            },
+            Err(e) => {
+                error!("未能成功获取 Bootstrap 信息, 正在重新连接服务器: {}", e);
+                continue;
+            },
+        };
 
         // 日志记录当前节点ID和会话令牌
         info!("当前 Node_ID: {}, Session_token: {}", node_id, session_token);

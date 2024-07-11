@@ -54,7 +54,7 @@ pub async fn init_client(server_url: String) -> CloudflareSpeedtestClient<Channe
 /// - BootstrapResponse: 启动请求的响应。
 /// - String: 生成的节点ID。
 /// - String: 响应中的会话令牌。
-pub async fn send_bootstrap(client: CloudflareSpeedtestClient<Channel>, maximum_mbps: i32, bootstrap_token: String) -> (BootstrapResponse, String, String) {
+pub async fn send_bootstrap(client: CloudflareSpeedtestClient<Channel>, maximum_mbps: i32, bootstrap_token: String) -> Result<(BootstrapResponse, String, String), Box<dyn Error>>{
     // 生成一个唯一的节点ID
     let node_id: String = Uuid::new_v4().to_string();
     
@@ -74,7 +74,7 @@ pub async fn send_bootstrap(client: CloudflareSpeedtestClient<Channel>, maximum_
         Ok(res) => res.get_ref().clone(),
         Err(e) => {
             error!("发送 Bootstrap 时发送错误: {}", e);
-            exit(1);
+            return Err(Box::new(tonic::Status::aborted("Bootstrap Boomed!")));
         },
     };
 
@@ -96,7 +96,7 @@ pub async fn send_bootstrap(client: CloudflareSpeedtestClient<Channel>, maximum_
     }
 
     // 返回响应、节点ID和会话令牌
-    return (response, node_id, session_token);
+    return Ok((response, node_id, session_token));
 }
 
 
