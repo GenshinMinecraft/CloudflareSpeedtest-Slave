@@ -63,8 +63,10 @@ Options:
 首先, 请安装 Docker: 
 
 ```bash
-curl -fsSL https://test.docker.com -o test-docker.sh
-sudo sh test-docker.sh
+curl -fsSL https://test.docker.com -o test-docker.sh | bash -s docker
+
+# 如果您在中国大陆, 可能需要 Docker 镜像: 
+curl -fsSL https://gdk.rtc.ovh | bash -s docker --mirror Aliyun
 ```
 
 随后运行 Docker:
@@ -74,7 +76,7 @@ docker run -d --name CloudflareSpeedtest-Slave \
 -e TOKEN=cfst1234 \
 -e MAX_MBPS=500 \
 -e SERVER=47.238.130.86:2333 \
-genshinminecraft/cloudflarespeedtest-slave:v0.0.2
+dp.rtc.ovh/genshinminecraft/cloudflarespeedtest-slave:v0.0.2
 ```
 
 目前, 我们只提供了 `arm64` / `amd64` 架构的镜像, 如果需要其他架构的镜像, 请自行编译主程序后编写 Dockerfile
