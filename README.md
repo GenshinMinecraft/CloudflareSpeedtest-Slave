@@ -60,7 +60,23 @@ Options:
 
 ## Docker 使用
 
-Coming Soon
+首先, 请安装 Docker, 此处不再赘述
+
+```bash
+docker run -d --name CloudflareSpeedtest-Slave \
+-e TOKEN=cfst1234 \
+-e MAX_MBPS=500 \
+-e SERVER=47.238.130.86:2333 \
+genshinminecraft/cloudflarespeedtest-slave:v0.0.2
+```
+
+目前, 我们只提供了 `arm64` / `amd64` 架构的镜像, 如果需要其他架构的镜像, 请自行编译主程序后编写 Dockerfile
+
+同样的, 您还需要在**宿主机**调整系统套接字缓存:
+
+```bash
+sysctl -w net.core.wmem_default=4194304 >> /etc/sysctl.conf # 设置为 4MB, 这足够超多 IP 的测试了
+```
 
 ## 贡献
 
