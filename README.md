@@ -75,7 +75,7 @@ curl -fsSL https://gdk.rtc.ovh | bash -s docker --mirror Aliyun
 docker run -d --name CloudflareSpeedtest-Slave \
 -e TOKEN=cfst1234 \
 -e MAX_MBPS=500 \
--e SERVER=47.238.130.86:2333 \
+-e SERVER=backend.cloudflare.su:2333 \
 dp.rtc.ovh/genshinminecraft/cloudflarespeedtest-slave:v0.0.2
 ```
 
