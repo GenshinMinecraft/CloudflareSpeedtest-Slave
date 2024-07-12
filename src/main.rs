@@ -14,7 +14,7 @@ use crate::{
     speed::*,
 };
 
-use std::{env, process::exit};
+use std::{env, process::exit, thread, time::Duration};
 use cloudflare_speedtest_client::CloudflareSpeedtestClient;
 use log::{debug, error, info, warn};
 use rustls::crypto::aws_lc_rs;
@@ -48,13 +48,23 @@ async fn main() {
         exit(1);
     }
 
-    // 初始化Cloudflare Speedtest客户端
-    let client: CloudflareSpeedtestClient<Channel> = init_client(args.clone().server).await;
-
     let _ = aws_lc_rs::default_provider().install_default().unwrap();
 
     // 主循环, 用于定期执行速度测试
     loop {
+        // 初始化Cloudflare Speedtest客户端
+        let client: CloudflareSpeedtestClient<Channel> = match init_client(args.clone().server).await {
+            Ok(tmp) => {
+                info!("成功初始化 Cloudflare Speedtest 客户端");
+                tmp
+            },
+            Err(e) => {
+                error!("未能成功初始化 Cloudflare Speedtest 客户端, 15sec 后重新连接服务器: {}", e);
+                thread::sleep(Duration::from_secs(15));
+                continue;
+            },
+        };
+
         // 发送启动请求, 获取节点ID和会话令牌
         let (bootstrap_res, node_id, session_token) = match send_bootstrap(client.clone(), args.max_mbps, args.token.clone()).await {
             Ok(tmp) => {
@@ -62,7 +72,8 @@ async fn main() {
                 tmp
             },
             Err(e) => {
-                error!("未能成功获取 Bootstrap 信息, 正在重新连接服务器: {}", e);
+                error!("未能成功获取 Bootstrap 信息, 15sec 后重新连接服务器: {}", e);
+                thread::sleep(Duration::from_secs(15));
                 continue;
             },
         };

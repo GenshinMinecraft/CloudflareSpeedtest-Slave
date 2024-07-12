@@ -23,7 +23,7 @@ use uuid::Uuid;
  * @param server_url 服务器URL, 用于建立连接。
  * @return CloudflareSpeedtestClient实例, 用于后续速度测试操作。
  */
-pub async fn init_client(server_url: String) -> CloudflareSpeedtestClient<Channel> {
+pub async fn init_client(server_url: String) -> Result<CloudflareSpeedtestClient<Channel>, Box<dyn Error>> {
     // 尝试连接到指定的服务器
     let client = match CloudflareSpeedtestClient::connect("http://".to_string() + &server_url).await {
         Ok(tmp) => {
@@ -34,10 +34,10 @@ pub async fn init_client(server_url: String) -> CloudflareSpeedtestClient<Channe
         Err(e) => {
             // 连接失败, 打印错误消息并退出程序
             error!("无法连接服务器: {}", e);
-            exit(1);
+            return Err(Box::new(tonic::Status::aborted("无法创建于服务器的连接")));
         },
     };
-    return client;
+    return Ok(client);
 }
 
 /// 异步发送启动配置请求并处理响应。
