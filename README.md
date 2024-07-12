@@ -22,7 +22,7 @@
 该程序在使用时需要新建原始套接字的权限, 如果需要在**非 Root** 权限下使用, 请执行下面的 Bash 代码:
 
 ```bash
-sudo setcap cap_net_raw=eip /path/to/binray
+sudo setcap cap_net_raw=eip /path/to/binary
 ```
 
 有的时候, 您还需要将默认的**系统套接字缓存**调为更大才能避免 Ping 被堵塞
@@ -60,7 +60,13 @@ Options:
 
 ## Docker 使用
 
-首先, 请安装 Docker, 此处不再赘述
+首先, 请安装 Docker: 
+
+```bash
+curl -fsSL https://get.docker.com | bash -s docker --mirror Aliyun
+```
+
+随后运行 Docker:
 
 ```bash
 docker run -d --name CloudflareSpeedtest-Slave \
@@ -97,9 +103,9 @@ cargo build --release --target x86_64-unknown-linux-musl # Or aarch64-unknown-li
 
 ### Docker
 
-请事先将已经编译好的 `arm64` / `amd64` 二进制文件放入本项目根目录下的 `binray/` 文件夹 (没有请自行创建)
+请事先将已经编译好的 `arm64` / `amd64` 二进制文件放入本项目根目录下的 `binary/` 文件夹 (没有请自行创建)
 
-需要: `binray/arm64` 与 `binray/amd64`
+需要: `binary/arm64` 与 `binary/amd64`
 
 ```bash
 docker buildx build --platform linux/amd64,linux/arm64 .
