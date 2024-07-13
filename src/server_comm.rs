@@ -1,11 +1,11 @@
-use std::{error::Error, process::exit};
+use std::{error::Error, process::exit, time::Duration};
 
 use crate::{
     cfst_rpc::*, cloudflare_speedtest_client::CloudflareSpeedtestClient, ping::ip_cidr_to_ips,
 };
 
 use log::{debug, error, info, warn};
-use tonic::transport::Channel;
+use tonic::transport::{Channel, Endpoint};
 use uuid::Uuid;
 
 /**
@@ -22,7 +22,24 @@ pub async fn init_client(
     server_url: String,
 ) -> Result<CloudflareSpeedtestClient<Channel>, Box<dyn Error>> {
     // 尝试连接到指定的服务器
-    let client = match CloudflareSpeedtestClient::connect("http://".to_string() + &server_url).await
+    let endpoint = match Endpoint::from_shared("http://".to_string() + &server_url) {
+        Ok(tmp) => tmp,
+        Err(e) => {
+            error!("无法解析服务器地址: {}", e);
+            return Err(Box::new(tonic::Status::aborted("无法解析服务器地址")));
+        }
+    };
+
+    let client = match CloudflareSpeedtestClient::connect(
+        endpoint
+            .timeout(Duration::from_secs(5))
+            .connect_timeout(Duration::from_secs(5))
+            .tcp_keepalive(Some(std::time::Duration::from_secs(5)))
+            .http2_keep_alive_interval(Duration::from_secs(5))
+            .keep_alive_timeout(Duration::from_secs(5))
+            .keep_alive_while_idle(true),
+    )
+    .await
     {
         Ok(tmp) => {
             // 连接成功, 打印成功消息并返回客户端实例
@@ -30,7 +47,7 @@ pub async fn init_client(
             tmp
         }
         Err(e) => {
-            // 连接失败, 打印错误消息并退出程序
+            // 连接失败, 打印错误消息并返回错误
             error!("无法连接服务器: {}", e);
             return Err(Box::new(tonic::Status::aborted("无法创建于服务器的连接")));
         }
