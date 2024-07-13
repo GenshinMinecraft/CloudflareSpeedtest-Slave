@@ -1,12 +1,7 @@
-use std::{
-    error::Error,
-    process::exit,
-};
+use std::{error::Error, process::exit};
 
 use crate::{
-    cfst_rpc::*,
-    cloudflare_speedtest_client::CloudflareSpeedtestClient,
-    ping::ip_cidr_to_ips,
+    cfst_rpc::*, cloudflare_speedtest_client::CloudflareSpeedtestClient, ping::ip_cidr_to_ips,
 };
 
 use log::{debug, error, info, warn};
@@ -15,27 +10,30 @@ use uuid::Uuid;
 
 /**
  * 异步初始化CloudflareSpeedtest客户端。
- * 
+ *
  * 本函数尝试与指定的服务器建立连接, 并返回一个CloudflareSpeedtestClient实例。
  * 如果连接成功, 它将打印一条成功连接的消息, 并返回客户端实例。
  * 如果连接失败, 它将打印连接错误的消息, 并退出程序。
- * 
+ *
  * @param server_url 服务器URL, 用于建立连接。
  * @return CloudflareSpeedtestClient实例, 用于后续速度测试操作。
  */
-pub async fn init_client(server_url: String) -> Result<CloudflareSpeedtestClient<Channel>, Box<dyn Error>> {
+pub async fn init_client(
+    server_url: String,
+) -> Result<CloudflareSpeedtestClient<Channel>, Box<dyn Error>> {
     // 尝试连接到指定的服务器
-    let client = match CloudflareSpeedtestClient::connect("http://".to_string() + &server_url).await {
+    let client = match CloudflareSpeedtestClient::connect("http://".to_string() + &server_url).await
+    {
         Ok(tmp) => {
             // 连接成功, 打印成功消息并返回客户端实例
             info!("成功连接服务器");
             tmp
-        },
+        }
         Err(e) => {
             // 连接失败, 打印错误消息并退出程序
             error!("无法连接服务器: {}", e);
             return Err(Box::new(tonic::Status::aborted("无法创建于服务器的连接")));
-        },
+        }
     };
     return Ok(client);
 }
@@ -54,10 +52,14 @@ pub async fn init_client(server_url: String) -> Result<CloudflareSpeedtestClient
 /// - BootstrapResponse: 启动请求的响应。
 /// - String: 生成的节点ID。
 /// - String: 响应中的会话令牌。
-pub async fn send_bootstrap(client: CloudflareSpeedtestClient<Channel>, maximum_mbps: i32, bootstrap_token: String) -> Result<(BootstrapResponse, String, String), Box<dyn Error>>{
+pub async fn send_bootstrap(
+    client: CloudflareSpeedtestClient<Channel>,
+    maximum_mbps: i32,
+    bootstrap_token: String,
+) -> Result<(BootstrapResponse, String, String), Box<dyn Error>> {
     // 生成一个唯一的节点ID
     let node_id: String = Uuid::new_v4().to_string();
-    
+
     // 构造启动请求对象
     let reqwest: BootstrapRequest = BootstrapRequest {
         maximum_mbps: maximum_mbps,
@@ -75,7 +77,7 @@ pub async fn send_bootstrap(client: CloudflareSpeedtestClient<Channel>, maximum_
         Err(e) => {
             error!("发送 Bootstrap 时发送错误: {}", e);
             return Err(Box::new(tonic::Status::aborted("Bootstrap Boomed!")));
-        },
+        }
     };
 
     // 记录响应详情
@@ -83,7 +85,10 @@ pub async fn send_bootstrap(client: CloudflareSpeedtestClient<Channel>, maximum_
 
     // 检查启动请求是否成功
     if response.clone().success != true {
-        error!("Bootstrap 信息已成功, 但返回错误 (也许是 Bootstrap Token 设置错误): {:?}", response.clone());
+        error!(
+            "Bootstrap 信息已成功, 但返回错误 (也许是 Bootstrap Token 设置错误): {:?}",
+            response.clone()
+        );
         exit(1);
     }
 
@@ -92,18 +97,17 @@ pub async fn send_bootstrap(client: CloudflareSpeedtestClient<Channel>, maximum_
 
     // 如果响应指示需要升级, 则发出警告
     if response.clone().should_upgrade == true {
-        warn!("该从端需更新, 建议更新至最新版本");
+        warn!("该后端需更新, 建议更新至最新版本");
     }
 
     // 返回响应、节点ID和会话令牌
     return Ok((response, node_id, session_token));
 }
 
-
 /// 异步发送速度测试请求到主端, 并返回速度测试响应和IP范围列表。
 ///
 /// 此函数使用提供的Cloudflare Speedtest客户端、节点ID和会话令牌来发起速度测试请求。
-/// 它首先构建一个速度测试请求, 然后发送该请求并处理响应。如果请求成功, 它将解析响应中的IP范围, 
+/// 它首先构建一个速度测试请求, 然后发送该请求并处理响应。如果请求成功, 它将解析响应中的IP范围,
 /// 并将这些信息以及原始响应一起返回。
 ///
 /// 参数:
@@ -148,36 +152,38 @@ pub async fn send_speedtest(
 
                 // Exit the loop after processing the message or continue as needed
                 return Ok((response, ip_ranges_ips));
-            },
+            }
             Ok(None) => {
                 // The stream was closed by the sender
                 error!("与主端的流传输被迫关闭, 这可能是因为后端网络波动或主端崩溃, 正在尝试重新连接...");
                 // Handle the closure of the stream, possibly attempt to reconnect or exit
-                return Err(Box::new(tonic::Status::aborted("Stream was closed by the sender.")));
-            },
+                return Err(Box::new(tonic::Status::aborted(
+                    "Stream was closed by the sender.",
+                )));
+            }
             Err(e) => {
                 // An error occurred while fetching the next message
                 error!("无法接收主端发送的消息, 正在尝试重新连接: {}", e);
                 return Err(Box::new(e));
-            },
+            }
         }
     }
 }
 
 /// 异步发送速度测试结果到主端。
 ///
-/// 此函数接收速度测试的IP地址、ping值和速度, 以及一个Cloudflare速度测试客户端, 
+/// 此函数接收速度测试的IP地址、ping值和速度, 以及一个Cloudflare速度测试客户端,
 /// 用于向主端发送速度测试结果。它还接收一个节点ID和会话令牌, 这些可能是用于
 /// 鉴权或标识测试来源的。
 ///
 /// 返回结果为速度测试响应, 或者一个错误盒子。如果成功发送了测试结果, 它将返回测试结果的副本。
 pub async fn send_speedtest_result(
-    ip: String, 
-    ping: i32, 
-    speed: i32, 
-    mut client: CloudflareSpeedtestClient<Channel>, 
-    node_id: String, 
-    session_token: String
+    ip: String,
+    ping: i32,
+    speed: i32,
+    mut client: CloudflareSpeedtestClient<Channel>,
+    node_id: String,
+    session_token: String,
 ) -> Result<SpeedtestResultResponse, Box<dyn Error>> {
     // 构建IP结果对象, 包含IP地址、延迟和速度信息。
     let ipresult = IpResult {
@@ -205,11 +211,11 @@ pub async fn send_speedtest_result(
             // 如果发送成功, 记录信息并返回结果的副本。
             info!("成功发送 Speedtest Result 信息");
             return Ok(tmp.get_ref().clone());
-        },
+        }
         Err(e) => {
             // 如果发送失败, 记录错误并返回错误盒子。
             error!("无法发送 Speedtest Result 信息: {}", e);
             return Err(Box::new(e));
-        },
+        }
     }
 }

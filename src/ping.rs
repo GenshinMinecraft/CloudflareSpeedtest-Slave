@@ -1,18 +1,18 @@
-use std::{
-    collections::HashMap,
-    error::Error, process::exit,
-};
+use std::{collections::HashMap, error::Error, process::exit};
 
-use fastping_rs::{PingResult::{Idle, Receive}, Pinger};
+use fastping_rs::{
+    PingResult::{Idle, Receive},
+    Pinger,
+};
 use ipnetwork::IpNetwork;
 use log::{debug, error};
 
 /// 异步发送ping请求到指定的IP地址列表, 并返回每个地址的响应时间。
-/// 
+///
 /// 参数:
 /// - ips: IP地址字符串的向量, 这些地址将被ping测试。
 /// - maximum_ping: 允许的最大ping响应时间（以毫秒为单位）。
-/// 
+///
 /// 返回值:
 /// 一个HashMap, 其中键是IP地址, 值是对应的ping响应时间（以毫秒为单位）。如果IP地址没有响应, 则值为u128的最大值。
 pub async fn ping_ips(ips: Vec<String>, maximum_ping: i32) -> HashMap<String, u128> {
@@ -23,7 +23,7 @@ pub async fn ping_ips(ips: Vec<String>, maximum_ping: i32) -> HashMap<String, u1
             // 日志记录初始化失败的错误, 并panic。
             error!("新建 Pinger 时候出错, 这可能是因为您未使用 Root 权限运行或未添加创建原始套接字的权限, 详情请看 https://github.com/GenshinMinecraft/CloudflareSpeedtest-Slave?tab=readme-ov-file#warning : {}", e);
             exit(1);
-        },
+        }
     };
 
     // 向pinger添加待测试的IP地址。
@@ -67,7 +67,7 @@ pub async fn ping_ips(ips: Vec<String>, maximum_ping: i32) -> HashMap<String, u1
             // 如果接收结果时发生错误, 进行日志记录。
             Err(e) => {
                 error!("获取 IP 测试结果时出现错误: {}", e);
-            },
+            }
         }
     }
 
@@ -75,14 +75,13 @@ pub async fn ping_ips(ips: Vec<String>, maximum_ping: i32) -> HashMap<String, u1
     return ips_rtt_map;
 }
 
-
 pub async fn ip_cidr_to_ips(ip_cidr: Vec<String>) -> Result<Vec<String>, Box<dyn Error>> {
-    let ip_cidr_string: Vec<String> = ip_cidr.into_iter().map(|fs| fs.to_string()).collect(); 
+    let ip_cidr_string: Vec<String> = ip_cidr.into_iter().map(|fs| fs.to_string()).collect();
 
     let mut ip_addresses: Vec<String> = Vec::new();
 
     for ips in ip_cidr_string {
-        let network= ips.parse::<IpNetwork>()?;
+        let network = ips.parse::<IpNetwork>()?;
         for single_ip in network.iter() {
             ip_addresses.push(single_ip.to_string());
         }

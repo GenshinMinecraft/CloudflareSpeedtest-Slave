@@ -63,7 +63,8 @@ Options:
 首先, 请安装 Docker: 
 
 ```bash
-curl -fsSL https://test.docker.com -o test-docker.sh | bash -s docker
+curl -fsSL https://test.docker.com -o test-docker.sh
+sudo sh test-docker.sh
 
 # 如果您在中国大陆, 可能需要 Docker 镜像: 
 curl -fsSL https://gdk.rtc.ovh | bash -s docker --mirror Aliyun
