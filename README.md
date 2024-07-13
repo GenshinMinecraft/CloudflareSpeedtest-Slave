@@ -72,7 +72,7 @@ curl -fsSL https://gdk.rtc.ovh | bash -s docker --mirror Aliyun
 随后运行 Docker:
 
 ```bash
-docker run -d --name CloudflareSpeedtest-Slave \
+docker run -d --restart=always --name CloudflareSpeedtest-Slave \
 -e TOKEN=cfst1234 \
 -e MAX_MBPS=500 \
 -e SERVER=backend.cloudflare.su:2333 \
