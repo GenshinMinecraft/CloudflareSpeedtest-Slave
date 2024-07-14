@@ -8,7 +8,7 @@ mod speed;
 use crate::{args::*, cfst_rpc::*, install_upgrade::*, ping::*, server_comm::*, speed::*};
 
 use cloudflare_speedtest_client::CloudflareSpeedtestClient;
-use log::{debug, error, info, warn};
+use log::{debug, error, info, SetLoggerError, warn};
 use rustls::crypto::aws_lc_rs;
 use simple_logger::init_with_level;
 use std::{env, process::exit, thread, time::Duration};
@@ -57,7 +57,7 @@ async fn main() {
                         "未能成功初始化 Cloudflare Speedtest 客户端, 15sec 后重新连接服务器: {}",
                         e
                     );
-                    thread::sleep(Duration::from_secs(15));
+                    tokio::time::sleep(Duration::from_secs(15)).await;
                     continue;
                 }
             };
@@ -71,7 +71,7 @@ async fn main() {
                 }
                 Err(e) => {
                     error!("未能成功获取 Bootstrap 信息, 15sec 后重新连接服务器: {}", e);
-                    thread::sleep(Duration::from_secs(15));
+                    tokio::time::sleep(Duration::from_secs(15)).await;
                     continue;
                 }
             };
