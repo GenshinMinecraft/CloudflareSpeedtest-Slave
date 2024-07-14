@@ -8,10 +8,10 @@ mod speed;
 use crate::{args::*, cfst_rpc::*, install_upgrade::*, ping::*, server_comm::*, speed::*};
 
 use cloudflare_speedtest_client::CloudflareSpeedtestClient;
-use log::{debug, error, info, SetLoggerError, warn};
+use log::{debug, error, info, warn};
 use rustls::crypto::aws_lc_rs;
 use simple_logger::init_with_level;
-use std::{env, process::exit, thread, time::Duration};
+use std::{env, process::exit, time::Duration};
 use tonic::transport::Channel;
 
 #[tokio::main]
