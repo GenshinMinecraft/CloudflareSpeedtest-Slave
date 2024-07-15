@@ -49,7 +49,7 @@ pub async fn init_client(
         Err(e) => {
             // 连接失败, 打印错误消息并返回错误
             error!("无法连接服务器: {}", e);
-            return Err(Box::new(tonic::Status::aborted("无法创建于服务器的连接")));
+            return Err(Box::new(tonic::Status::aborted("无法连接服务器")));
         }
     };
     return Ok(client);
