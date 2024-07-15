@@ -34,7 +34,7 @@ pub async fn init_client(
         endpoint
             .timeout(Duration::from_secs(5))
             .connect_timeout(Duration::from_secs(5))
-            .tcp_keepalive(Some(std::time::Duration::from_secs(5)))
+            .tcp_keepalive(Some(Duration::from_secs(5)))
             .http2_keep_alive_interval(Duration::from_secs(5))
             .keep_alive_timeout(Duration::from_secs(5))
             .keep_alive_while_idle(true),
@@ -79,9 +79,9 @@ pub async fn send_bootstrap(
 
     // 构造启动请求对象
     let reqwest: BootstrapRequest = BootstrapRequest {
-        maximum_mbps: maximum_mbps,
+        maximum_mbps,
         client_version: env!("CARGO_PKG_VERSION").to_string(),
-        bootstrap_token: bootstrap_token,
+        bootstrap_token,
         node_id: node_id.clone(),
     };
 
@@ -159,7 +159,7 @@ pub async fn send_speedtest(
     // 让我们感谢 Moohr!
     // 尝试读取流中的消息并处理可能的错误
     loop {
-        match stream.message().await {
+        return match stream.message().await {
             Ok(Some(response)) => {
                 // Process the valid response message here
                 debug!("SpeedtestResponse Message: {:?}", response);
@@ -168,22 +168,22 @@ pub async fn send_speedtest(
                 let ip_ranges_ips = ip_cidr_to_ips(response.clone().ip_ranges).await?;
 
                 // Exit the loop after processing the message or continue as needed
-                return Ok((response, ip_ranges_ips));
+                Ok((response, ip_ranges_ips))
             }
             Ok(None) => {
                 // The stream was closed by the sender
                 error!("与主端的流传输被迫关闭, 这可能是因为后端网络波动或主端崩溃, 正在尝试重新连接...");
                 // Handle the closure of the stream, possibly attempt to reconnect or exit
-                return Err(Box::new(tonic::Status::aborted(
+                Err(Box::new(tonic::Status::aborted(
                     "Stream was closed by the sender.",
-                )));
+                )))
             }
             Err(e) => {
                 // An error occurred while fetching the next message
                 error!("无法接收主端发送的消息, 正在尝试重新连接: {}", e);
-                return Err(Box::new(e));
+                Err(Box::new(e))
             }
-        }
+        };
     }
 }
 
@@ -223,16 +223,16 @@ pub async fn send_speedtest_result(
     debug!("SpeedtestResultResponse Message: {:?}", reqwest);
 
     // 尝试发送速度测试结果请求, 并处理结果。
-    match client.speedtest_result(reqwest).await {
+    return match client.speedtest_result(reqwest).await {
         Ok(tmp) => {
             // 如果发送成功, 记录信息并返回结果的副本。
             info!("成功发送 Speedtest Result 信息");
-            return Ok(tmp.get_ref().clone());
+            Ok(tmp.get_ref().clone())
         }
         Err(e) => {
             // 如果发送失败, 记录错误并返回错误盒子。
             error!("无法发送 Speedtest Result 信息: {}", e);
-            return Err(Box::new(e));
+            Err(Box::new(e))
         }
-    }
+    };
 }

@@ -26,6 +26,7 @@ tonic-build = "0.12.0"
 url = "2.5.2"
 uuid = { version = "1.10.0", features = [ "v4" ] }
 webpki-roots = "0.26.3"
+rand = "0.8.5"
 
 [build-dependencies]
 tonic-build = "0.12.0"

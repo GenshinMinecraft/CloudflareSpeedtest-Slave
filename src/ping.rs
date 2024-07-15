@@ -6,6 +6,8 @@ use fastping_rs::{
 };
 use ipnetwork::IpNetwork;
 use log::{debug, error};
+use rand::seq::SliceRandom;
+use rand::thread_rng;
 
 /// 异步发送ping请求到指定的IP地址列表, 并返回每个地址的响应时间。
 ///
@@ -88,4 +90,16 @@ pub async fn ip_cidr_to_ips(ip_cidr: Vec<String>) -> Result<Vec<String>, Box<dyn
     }
 
     Ok(ip_addresses)
+}
+
+pub fn get_random_ips(ips: Vec<String>, count: i32) -> Vec<String> {
+    let mut rng = thread_rng();
+    return if ips.len() <= count as usize {
+        ips
+    } else {
+        let mut random_ips = ips.clone();
+        random_ips.shuffle(&mut rng);
+        let result = random_ips.into_iter().take(count as usize).collect();
+        result
+    };
 }

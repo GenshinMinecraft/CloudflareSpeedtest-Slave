@@ -104,11 +104,17 @@ async fn main() {
                 }
             };
 
+            let random_need_ping_ips = get_random_ips(need_ping_ips.clone(), 100);
+
+            info!(
+                "共获取 IP {} 个, 将测试 IP {} 个",
+                need_ping_ips.len(),
+                random_need_ping_ips.len()
+            );
+
             // 对需要ping的IP进行ping测试, 记录延迟
             let mut ips_ping: std::collections::HashMap<String, u128> =
-                ping_ips(need_ping_ips, speedtest_response.maximum_ping).await;
-            info!("总计 IP 有 {} 个", ips_ping.len());
-            debug!("总计 IP: {:?}", ips_ping);
+                ping_ips(random_need_ping_ips, speedtest_response.maximum_ping).await;
             // 移除延迟过高的IP
             ips_ping.retain(|_, &mut value| value != u128::MAX);
             info!("符合条件 IP 有 {} 个", ips_ping.len());

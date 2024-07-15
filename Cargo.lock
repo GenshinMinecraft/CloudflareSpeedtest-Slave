@@ -11,6 +11,7 @@ dependencies = [
  "ipnetwork",
  "log",
  "prost",
+ "rand",
  "reqwest",
  "rustls",
  "simple_logger",
