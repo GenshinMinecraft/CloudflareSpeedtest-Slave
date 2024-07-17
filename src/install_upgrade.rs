@@ -334,7 +334,10 @@ pub async fn upgrade_bin(
                 }
             }
         }
-        Err(_) => todo!(),
+        Err(e) => {
+            error!("无法将 Binary 保存到 Temp Dir, 终止更新并继续运行: {}", e);
+            return;
+        }
     }
 
     // 为临时文件添加可执行权限。
