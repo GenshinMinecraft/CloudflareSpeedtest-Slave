@@ -13,24 +13,6 @@
 
 为 Moohr 开发的 Cloudflare Speedtest 主端**官方钦定**后端, 如果有需要自行编写后端的需求可参考该项目
 
-该项目**不支持 Windows** 系统运行, 以后也不会支持, Never!
-
-在华为仓颉编程语言推出后, 本项目将第一时间使用其开发！
-
-## Warning
-
-该程序在使用时需要新建原始套接字的权限, 如果需要在**非 Root** 权限下使用, 请执行下面的 Bash 代码:
-
-```bash
-sudo setcap cap_net_raw=eip /path/to/binary
-```
-
-有的时候, 您还需要将默认的**系统套接字缓存**调为更大才能避免 Ping 被堵塞
-
-```bash
-sysctl -w net.core.wmem_default=4194304 >> /etc/sysctl.conf # 设置为 4MB, 这足够超多 IP 的测试了
-```
-
 ## 使用
 
 ```
@@ -77,7 +59,7 @@ docker run -d --restart=always --name CloudflareSpeedtest-Slave \
 -e TOKEN=cfst1234 \
 -e MAX_MBPS=500 \
 -e SERVER=backend.cloudflare.su:2333 \
-dp.rtc.ovh/genshinminecraft/cloudflarespeedtest-slave:v0.0.4
+dp.rtc.ovh/genshinminecraft/cloudflarespeedtest-slave:v0.0.5
 ```
 
 目前, 我们只提供了 `arm64` / `amd64` 架构的镜像, 如果需要其他架构的镜像, 请自行编译主程序后编写 Dockerfile

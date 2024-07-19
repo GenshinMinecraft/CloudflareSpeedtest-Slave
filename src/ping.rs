@@ -1,14 +1,8 @@
-use std::time::Duration;
-use std::{collections::HashMap, error::Error};
-
-// use clap::error::ContextValue::String;
-use futures::stream::iter;
-use futures::StreamExt;
+use futures::{stream::iter, StreamExt};
 use ipnetwork::IpNetwork;
 use log::debug;
-use tokio::net::TcpStream;
-use tokio::sync::Mutex;
-use tokio::time::{timeout, Instant};
+use std::{collections::HashMap, error::Error, time::Duration};
+use tokio::{net::TcpStream, sync::Mutex, time::{timeout, Instant}};
 
 async fn ping_single_ip(ip: String, timeout_ms: i32) -> i32 {
     let addr = format!("{}:80", ip);

@@ -11,7 +11,7 @@ use cloudflare_speedtest_client::CloudflareSpeedtestClient;
 use log::{debug, error, info, warn};
 use rustls::crypto::aws_lc_rs;
 use simple_logger::init_with_level;
-use std::{env, process::exit, time::Duration};
+use std::{process::exit, time::Duration};
 use tonic::transport::Channel;
 
 #[tokio::main]
