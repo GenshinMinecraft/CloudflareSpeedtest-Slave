@@ -32,15 +32,6 @@ async fn main() {
         exit(1);
     }
 
-    // 检查操作系统是否为Windows, 如果是, 则输出错误信息并退出
-    if env::consts::OS == "windows" {
-        error!("天灭 Windows, Linux/OSX 保平安！");
-        error!("由于 fastping-rs 库不支持 Windows, 所以本项目永远不会支持 Windows");
-        error!("即使您在 Windows 环境下编译通过, 也绝不可能正常运行！");
-        error!("如果您真的需要在 Windows 下运行, 请使用其他项目: 暂无");
-        exit(1);
-    }
-
     let _ = aws_lc_rs::default_provider().install_default().unwrap();
 
     // 主循环, 用于定期执行速度测试
@@ -104,17 +95,10 @@ async fn main() {
                 }
             };
 
-            let random_need_ping_ips = get_random_ips(need_ping_ips.clone(), 100);
-
-            info!(
-                "共获取 IP {} 个, 将测试 IP {} 个",
-                need_ping_ips.len(),
-                random_need_ping_ips.len()
-            );
-
             // 对需要ping的IP进行ping测试, 记录延迟
             let mut ips_ping: std::collections::HashMap<String, u128> =
-                ping_ips(random_need_ping_ips, speedtest_response.maximum_ping).await;
+                ping_ips(need_ping_ips, speedtest_response.maximum_ping).await;
+            info!("获取到 {} 个 IP, 开始测试", ips_ping.len());
             // 移除延迟过高的IP
             ips_ping.retain(|_, &mut value| value != u128::MAX);
             info!("符合条件 IP 有 {} 个", ips_ping.len());
@@ -125,12 +109,12 @@ async fn main() {
             let mut the_last_ip_ping: i32 = -1;
             let mut the_last_ip_speed: i32 = -1;
 
-            for (speed_ip, _) in ips_ping.clone() {
+            for (speed_ip, ping) in ips_ping.clone() {
                 let tmp_speed =
                     speed_one_ip(speedtest_response.speed_url.clone(), speed_ip.clone(), 10).await;
                 if tmp_speed.round() as i32 >= speedtest_response.minimum_mbps {
                     the_last_ip = speed_ip;
-                    the_last_ip_ping = *ips_ping.get(&the_last_ip).unwrap() as i32;
+                    the_last_ip_ping = ping as i32;
                     the_last_ip_speed = tmp_speed.round() as i32;
                     break;
                 } else {

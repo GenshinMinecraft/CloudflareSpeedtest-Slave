@@ -1,80 +1,53 @@
-use std::{collections::HashMap, error::Error, process::exit};
+use std::time::Duration;
+use std::{collections::HashMap, error::Error};
 
-use fastping_rs::{
-    PingResult::{Idle, Receive},
-    Pinger,
-};
+// use clap::error::ContextValue::String;
+use futures::stream::iter;
+use futures::StreamExt;
 use ipnetwork::IpNetwork;
-use log::{debug, error};
-use rand::seq::SliceRandom;
-use rand::thread_rng;
+use log::debug;
+use tokio::net::TcpStream;
+use tokio::sync::Mutex;
+use tokio::time::{timeout, Instant};
 
-/// 异步发送ping请求到指定的IP地址列表, 并返回每个地址的响应时间。
-///
-/// 参数:
-/// - ips: IP地址字符串的向量, 这些地址将被ping测试。
-/// - maximum_ping: 允许的最大ping响应时间（以毫秒为单位）。
-///
-/// 返回值:
-/// 一个HashMap, 其中键是IP地址, 值是对应的ping响应时间（以毫秒为单位）。如果IP地址没有响应, 则值为u128的最大值。
-pub async fn ping_ips(ips: Vec<String>, maximum_ping: i32) -> HashMap<String, u128> {
-    // 初始化Pinger实体, 用于实际的ping测试。
-    let (pinger, results) = match Pinger::new(Some(maximum_ping as u64), Some(56)) {
-        Ok((pinger, results)) => (pinger, results),
-        Err(e) => {
-            // 日志记录初始化失败的错误, 并panic。
-            error!("新建 Pinger 时候出错, 这可能是因为您未使用 Root 权限运行或未添加创建原始套接字的权限, 详情请看 https://github.com/GenshinMinecraft/CloudflareSpeedtest-Slave?tab=readme-ov-file#warning : {}", e);
-            exit(1);
-        }
-    };
-
-    // 向pinger添加待测试的IP地址。
-    for ip in ips.clone() {
-        pinger.add_ipaddr(&ip);
-    }
-
-    // 启动ping测试。
-    pinger.run_pinger();
-
-    // 初始化用于存储IP地址和响应时间的结果映射。
-    let mut ips_rtt_map: HashMap<String, u128> = HashMap::new();
-
-    // 不断接收ping测试结果, 直到所有IP地址都测试完毕。
-    loop {
-        match results.recv() {
-            Ok(result) => match result {
-                // 如果某个IP地址没有响应, 将其添加到结果映射中, 值设为最大值。
-                Idle { addr } => {
-                    debug!("无效/不可达的 IP:  {}.", addr);
-                    ips_rtt_map.insert(addr.to_string(), u128::MAX);
-
-                    // 如果所有IP地址都已测试完毕, 停止ping测试。
-                    if ips_rtt_map.len() == ips.len() {
-                        pinger.stop_pinger();
-                        break;
-                    }
-                }
-                // 如果某个IP地址有响应, 记录其响应时间。
-                Receive { addr, rtt } => {
-                    debug!("存活 IP: {} in {:?}.", addr, rtt);
-                    ips_rtt_map.insert(addr.to_string(), rtt.as_millis());
-
-                    // 如果所有IP地址都已测试完毕, 停止ping测试。
-                    if ips_rtt_map.len() == ips.len() {
-                        pinger.stop_pinger();
-                        break;
-                    }
-                }
-            },
-            // 如果接收结果时发生错误, 进行日志记录。
-            Err(e) => {
-                error!("获取 IP 测试结果时出现错误: {}", e);
+async fn ping_single_ip(ip: String, timeout_ms: i32) -> i32 {
+    let addr = format!("{}:80", ip);
+    let time_out = Duration::from_millis(timeout_ms as u64);
+    let start = Instant::now();
+    match timeout(time_out, TcpStream::connect(&addr)).await {
+        Ok(_) => {
+            let duration = start.elapsed().as_millis() as i32;
+            if duration <= 10 {
+                -1
+            } else {
+                duration
             }
         }
+        Err(_) => -1,
     }
+}
 
-    // 返回所有IP地址的测试结果。
-    return ips_rtt_map;
+pub async fn ping_ips(ips: Vec<String>, maximum_ping: i32) -> HashMap<String, u128> {
+    let ip_and_ping_map = std::sync::Arc::new(Mutex::new(HashMap::new()));
+    iter(ips)
+        .for_each_concurrent(Some(100), |ip| {
+            let clone_map = ip_and_ping_map.clone();
+            async move {
+                let duration = ping_single_ip(ip.clone(), maximum_ping).await;
+                if duration != -1 {
+                    debug!("IP {} Ping {}ms", ip, duration);
+                    let mut map_lock = clone_map.lock().await;
+                    map_lock.insert(ip, duration as u128);
+                } else {
+                    debug!("IP {} 不可达", ip);
+                    let mut map_lock = clone_map.lock().await;
+                    map_lock.insert(ip, u128::MAX);
+                }
+            }
+        })
+        .await;
+    let mut inner_map = ip_and_ping_map.lock().await;
+    std::mem::take(&mut *inner_map)
 }
 
 pub async fn ip_cidr_to_ips(ip_cidr: Vec<String>) -> Result<Vec<String>, Box<dyn Error>> {
@@ -90,16 +63,4 @@ pub async fn ip_cidr_to_ips(ip_cidr: Vec<String>) -> Result<Vec<String>, Box<dyn
     }
 
     Ok(ip_addresses)
-}
-
-pub fn get_random_ips(ips: Vec<String>, count: i32) -> Vec<String> {
-    let mut rng = thread_rng();
-    return if ips.len() <= count as usize {
-        ips
-    } else {
-        let mut random_ips = ips.clone();
-        random_ips.shuffle(&mut rng);
-        let result = random_ips.into_iter().take(count as usize).collect();
-        result
-    };
 }
