@@ -115,15 +115,13 @@ Restart=always
     }
 
     // 删除旧的服务文件
-    match Command::new("rm")
-        .arg("-rf")
-        .arg("/etc/systemd/system/cfst_slave.service")
-        .output()
+    match fs::remove_file("/etc/systemd/system/cfst_slave.service")
     {
-        Ok(_) => {}
+        Ok(_) => {
+            info!("成功删除 /etc/systemd/system/cfst_slave.service");
+        }
         Err(e) => {
             error!("无法删除 /etc/systemd/system/cfst_slave.service: {}", e);
-            exit(1);
         }
     }
 
