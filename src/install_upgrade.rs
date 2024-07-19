@@ -35,7 +35,7 @@ pub fn install_systemd(args: Args) {
     }
 
     // 确认以 root 用户身份运行
-    if std::env::var("USER") == Ok("root".to_string()) {
+    if env::var("USER") == Ok("root".to_string()) {
         info!("正在使用 root 用户");
     } else {
         error!("非 root 用户, 请使用 root 用户运行 Install 功能");
@@ -69,19 +69,9 @@ pub fn install_systemd(args: Args) {
             if path_to_bin.to_str().unwrap() == "/usr/bin/CloudflareSpeedtest-Slave" {
                 info!("无需复制可执行文件");
             } else {
-                match Command::new("cp")
-                    .arg("-afr")
-                    .arg(path_to_bin)
-                    .arg("/usr/bin/CloudflareSpeedtest-Slave")
-                    .output()
-                {
-                    Ok(tmp) => {
-                        if tmp.status.success() {
-                            info!("成功将可执行文件复制到 /usr/bin/CloudflareSpeedtest-Slave");
-                        } else {
-                            error!("无法将可执行文件复制到 /usr/bin/CloudflareSpeedtest-Slave");
-                            exit(1);
-                        }
+                match fs::copy(path_to_bin, "/usr/bin/CloudflareSpeedtest-Slave") {
+                    Ok(_) => {
+                        info!("成功将可执行文件复制到 /usr/bin/CloudflareSpeedtest-Slave");
                     }
                     Err(e) => {
                         error!(
@@ -358,20 +348,9 @@ pub async fn upgrade_bin(
     // 复制临时文件到当前执行程序的路径, 以替换旧版本。
     match env::current_exe() {
         Ok(path_to_bin) => {
-            match Command::new("cp")
-                .arg("-afr")
-                .arg(file_path)
-                .arg(path_to_bin)
-                .output()
-            {
-                Ok(tmp) => {
-                    // 检查复制是否成功。
-                    if tmp.status.success() {
-                        info!("成功将可执行文件替换");
-                    } else {
-                        error!("无法将可执行文件替换, 终止更新并继续运行");
-                        return;
-                    }
+            match fs::copy(file_path, path_to_bin) {
+                Ok(_) => {
+                    info!("成功将可执行文件替换");
                 }
                 Err(e) => {
                     error!("无法将可执行文件替换, 终止更新并继续运行: {}", e);
