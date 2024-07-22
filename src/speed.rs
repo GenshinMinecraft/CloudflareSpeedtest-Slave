@@ -1,10 +1,10 @@
 use std::{
     io::{Read, Write},
-    net::TcpStream,
     sync::Arc,
+    net::TcpStream,
     time::Instant,
 };
-
+use std::net::Shutdown;
 use log::{error, info};
 use rustls::RootCertStore;
 use url::Url;
@@ -151,6 +151,9 @@ pub async fn speed_one_ip(speedtest_url: String, ip: String, speed_time: u32) ->
             }
         }
     }
+
+    sock.shutdown(Shutdown::Both).unwrap();
+    drop(sock);
 
     // 计算下载速度（Mbps）。
     // 已下载
