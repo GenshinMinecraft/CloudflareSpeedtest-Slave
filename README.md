@@ -59,7 +59,7 @@ docker run -d --restart=always --name CloudflareSpeedtest-Slave \
 -e TOKEN=cfst1234 \
 -e MAX_MBPS=500 \
 -e SERVER=backend.cloudflare.su:2333 \
-dp.rtc.ovh/genshinminecraft/cloudflarespeedtest-slave:v0.0.5
+dp.rtc.ovh/genshinminecraft/cloudflarespeedtest-slave:v0.0.6
 ```
 
 目前, 我们只提供了 `arm64` / `amd64` 架构的镜像, 如果需要其他架构的镜像, 请自行编译主程序后编写 Dockerfile
