@@ -95,10 +95,11 @@ pub fn install_systemd(args: Args) {
             let _ = max_mbps
                 .trim()
                 .parse::<u32>()
-                .expect("寄！你输入的不是个合法数值");
+                .expect("寄! 你输入的不是个合法数值");
         }
         Err(_) => {
-            panic!("请输入一个合法的最高带宽数值！")
+            error!("请输入一个合法的最高带宽数值! ");
+            exit(1);
         }
     }
     let mut debug = "";
