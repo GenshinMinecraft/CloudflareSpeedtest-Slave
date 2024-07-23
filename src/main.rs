@@ -26,7 +26,7 @@ async fn main() {
         init_with_level(log::Level::Info).unwrap();
     }
 
-    if args.max_mbps == 114514 {
+    if args.max_mbps == 114514 && args.install == false {
         error!("必须设置 Max Mbps 参数: -m / --max-mbps ");
         exit(1);
     }

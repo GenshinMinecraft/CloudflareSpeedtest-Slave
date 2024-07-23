@@ -2,31 +2,31 @@ use futures::{stream::iter, StreamExt};
 use ipnetwork::IpNetwork;
 use log::debug;
 use std::{collections::HashMap, error::Error, time::Duration};
-use tokio::{net::TcpStream, sync::Mutex, time::{timeout, Instant}};
 use tokio::io::AsyncWriteExt;
+use tokio::{
+    net::TcpStream,
+    sync::Mutex,
+    time::{timeout, Instant},
+};
 
 async fn ping_single_ip(ip: String, timeout_ms: i32) -> i32 {
     let addr = format!("{}:80", ip);
     let time_out = Duration::from_millis(timeout_ms as u64);
     let start = Instant::now();
     match timeout(time_out, TcpStream::connect(&addr)).await {
-        Ok(tmp) => {
-            match tmp {
-                Ok(mut tcpstream) => {
-                    let duration = start.elapsed().as_millis() as i32;
-                    tcpstream.shutdown().await.unwrap();
-                    drop(tcpstream);
-                    if duration <= 10 {
-                        -1
-                    } else {
-                        duration
-                    }
-                }
-                Err(_) => {
+        Ok(tmp) => match tmp {
+            Ok(mut tcpstream) => {
+                let duration = start.elapsed().as_millis() as i32;
+                tcpstream.shutdown().await.unwrap();
+                drop(tcpstream);
+                if duration <= 10 {
                     -1
+                } else {
+                    duration
                 }
             }
-        }
+            Err(_) => -1,
+        },
         Err(_) => -1,
     }
 }

@@ -1,12 +1,12 @@
-use std::{
-    io::{Read, Write},
-    sync::Arc,
-    net::TcpStream,
-    time::Instant,
-};
-use std::net::Shutdown;
 use log::{error, info};
 use rustls::RootCertStore;
+use std::net::Shutdown;
+use std::{
+    io::{Read, Write},
+    net::TcpStream,
+    sync::Arc,
+    time::Instant,
+};
 use url::Url;
 
 /**

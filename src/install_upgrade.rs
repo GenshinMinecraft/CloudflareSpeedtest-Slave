@@ -88,9 +88,26 @@ pub fn install_systemd(args: Args) {
             exit(1);
         }
     }
-
+    info!("请输入您机器的最高带宽值（单位：megabit/s mbps）：");
+    let mut max_mbps = String::new();
+    match io::stdin().read_line(&mut max_mbps) {
+        Ok(_) => {
+            let _ = max_mbps
+                .trim()
+                .parse::<u32>()
+                .expect("寄！你输入的不是个合法数值");
+        }
+        Err(_) => {
+            panic!("请输入一个合法的最高带宽数值！")
+        }
+    }
+    let mut debug = "";
+    if args.debug {
+        debug = "--debug";
+    }
     // 配置服务文件的内容
-    let service_config = r#"[Unit]
+    let service_config = format!(
+        "[Unit]
 Description=Cloudflare Speedtest Slave
 After=network.target
 
@@ -99,24 +116,23 @@ WantedBy=multi-user.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/CloudflareSpeedtest-Slave -s SERVERURL -t TOKEN -m MAXMBPS
+ExecStart=/usr/bin/CloudflareSpeedtest-Slave -s SERVERURL -t TOKEN -m {} {}
 Restart=always
-"#;
+",
+        max_mbps, debug
+    );
 
     // 根据参数替换服务文件中的占位符
     let mut replaced_service_config = service_config.replace("SERVERURL", args.server.as_str());
     replaced_service_config = replaced_service_config.replace("TOKEN", args.token.as_str());
-    if args.debug {
-        let tmp = args.max_mbps.to_string() + " --debug";
-        replaced_service_config = replaced_service_config.replace("MAXMBPS", tmp.as_str());
-    } else {
+    /*else {
         replaced_service_config =
             replaced_service_config.replace("MAXMBPS", args.max_mbps.to_string().as_str());
     }
+    */
 
     // 删除旧的服务文件
-    match fs::remove_file("/etc/systemd/system/cfst_slave.service")
-    {
+    match fs::remove_file("/etc/systemd/system/cfst_slave.service") {
         Ok(_) => {
             info!("成功删除 /etc/systemd/system/cfst_slave.service");
         }
@@ -345,17 +361,15 @@ pub async fn upgrade_bin(
 
     // 复制临时文件到当前执行程序的路径, 以替换旧版本。
     match env::current_exe() {
-        Ok(path_to_bin) => {
-            match fs::copy(file_path, path_to_bin) {
-                Ok(_) => {
-                    info!("成功将可执行文件替换");
-                }
-                Err(e) => {
-                    error!("无法将可执行文件替换, 终止更新并继续运行: {}", e);
-                    return;
-                }
+        Ok(path_to_bin) => match fs::copy(file_path, path_to_bin) {
+            Ok(_) => {
+                info!("成功将可执行文件替换");
             }
-        }
+            Err(e) => {
+                error!("无法将可执行文件替换, 终止更新并继续运行: {}", e);
+                return;
+            }
+        },
         Err(e) => {
             error!("无法获取当前运行程序路径, 终止更新并继续运行: {}", e);
             return;
