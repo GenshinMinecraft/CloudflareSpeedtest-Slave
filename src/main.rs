@@ -26,6 +26,11 @@ async fn main() {
         init_with_level(log::Level::Info).unwrap();
     }
 
+    if args.max_mbps == 114514 {
+        error!("必须设置 Max Mbps 参数: -m / --max-mbps ");
+        exit(1);
+    }
+
     // 如果命令行参数包含安装选项, 则执行安装操作并退出
     if args.install {
         install_systemd(args);
