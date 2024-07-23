@@ -16,7 +16,8 @@ pub struct Args {
 
     // 最大带宽
     /// Bandwidth (in Mbps)
-    #[arg(short, long, default_value_t = 500)]
+//    #[arg(short, long, default_value_t = 500)]
+    #[arg(short, long)]
     pub max_mbps: i32,
 
     // Debug Log 设置
