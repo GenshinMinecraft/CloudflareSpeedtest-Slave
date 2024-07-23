@@ -1,0 +1,31 @@
+# 定义一个名为Rust Release的GitHub Actions工作流，用于发布Rust程序
+name: Linux Build
+
+# 工作流在push到main分支时触发
+on:
+  push:
+    branches:
+      - "main"
+
+# 定义一个名为release的工作任务
+jobs:
+  release:
+    # 工作任务的名称，包含平台信息
+    name: Release - Windows
+    # 指定任务运行的环境
+    runs-on: windows-latest
+    # 定义任务的步骤
+    steps:
+      # 检出代码
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v3
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+      - name: Build
+        run: cargo build --release

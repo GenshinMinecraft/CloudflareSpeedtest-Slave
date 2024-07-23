@@ -1,5 +1,5 @@
 # 定义一个名为Rust Release的GitHub Actions工作流，用于发布Rust程序
-name: Rust Release
+name: Linux Build
 
 # 工作流在push到main分支时触发
 on:
@@ -18,14 +18,14 @@ jobs:
         platform:
           # Linux x86_64平台的构建配置
           - release_for: linux_x86_64
-            os: ubuntu-22.04
+            os: ubuntu-latest
             target: x86_64-unknown-linux-musl
             bin: CloudflareSpeedtest-Slave
             name: CloudflareSpeedtest-Slave-linux-x86_64.tar.gz
             command: build
           # Linux aarch64平台的构建配置
           - release_for: linux_aarch64
-            os: ubuntu-22.04
+            os: ubuntu-latest
             target: aarch64-unknown-linux-musl
             bin: CloudflareSpeedtest-Slave
             name: CloudflareSpeedtest-Slave-linux-aarch64.tar.gz
