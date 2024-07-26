@@ -12,6 +12,7 @@ use log::{debug, error, info, warn};
 use rustls::crypto::aws_lc_rs;
 use simple_logger::init_with_level;
 use std::{process::exit, time::Duration};
+use tokio::time::timeout;
 use tonic::transport::Channel;
 
 #[tokio::main]
@@ -115,8 +116,18 @@ async fn main() {
             let mut the_last_ip_speed: i32 = -1;
 
             for (speed_ip, ping) in ips_ping.clone() {
-                let tmp_speed =
-                    speed_one_ip(speedtest_response.speed_url.clone(), speed_ip.clone(), 10).await;
+                let tmp_speed = match timeout(
+                    Duration::from_secs(12),
+                    speed_one_ip(speedtest_response.speed_url.clone(), speed_ip.clone(), 10),
+                )
+                .await
+                {
+                    Ok(tmp) => tmp,
+                    Err(e) => {
+                        error!("IP {} 测速超时: {}", speed_ip, e);
+                        continue;
+                    }
+                };
                 if tmp_speed.round() as i32 >= speedtest_response.minimum_mbps {
                     the_last_ip = speed_ip;
                     the_last_ip_ping = ping as i32;

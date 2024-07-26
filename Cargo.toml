@@ -27,6 +27,7 @@ uuid = { version = "1.10.0", features = [ "v4" ] }
 webpki-roots = "0.26.3"
 rand = "0.9.0-alpha.1"
 futures = "0.3.30"
+tokio-rustls = "0.26.0"
 
 [build-dependencies]
 tonic-build = "0.12.0"

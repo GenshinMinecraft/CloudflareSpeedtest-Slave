@@ -16,6 +16,7 @@ dependencies = [
  "rustls",
  "simple_logger",
  "tokio",
+ "tokio-rustls",
  "tokio-stream",
  "tonic",
  "tonic-build",
