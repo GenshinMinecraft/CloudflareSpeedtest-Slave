@@ -1,6 +1,6 @@
 # CloudflareSpeedtest-Slave
 
-![](https://img.shields.io/github/license/GenshinMinecraft/CloudflareSpeedtest-Slave.svg)
+![LICENSE](https://img.shields.io/github/license/GenshinMinecraft/CloudflareSpeedtest-Slave.svg)
 ![GitHub top language](https://img.shields.io/github/languages/top/GenshinMinecraft/CloudflareSpeedtest-Slave)
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/w/GenshinMinecraft/CloudflareSpeedtest-Slave)
 ![GitHub repo size](https://img.shields.io/github/repo-size/GenshinMinecraft/CloudflareSpeedtest-Slave)
@@ -64,12 +64,6 @@ dp.rtc.ovh/genshinminecraft/cloudflarespeedtest-slave:v0.0.6
 
 目前, 我们只提供了 `arm64` / `amd64` 架构的镜像, 如果需要其他架构的镜像, 请自行编译主程序后编写 Dockerfile
 
-同样的, 您还需要在**宿主机**调整系统套接字缓存:
-
-```bash
-sysctl -w net.core.wmem_default=4194304 >> /etc/sysctl.conf # 设置为 4MB, 这足够超多 IP 的测试了
-```
-
 ## 贡献
 
 我们欢迎 Issue 和 Pull Request, 也可以前往我们的[内测群组](https://t.me/+Gbqf_XAhVIphZmY1)反馈
@@ -85,7 +79,7 @@ cargo build --release --target x86_64-unknown-linux-musl # Or aarch64-unknown-li
 ./target/x86_64-unknown-linux-musl/release/CloudflareSpeedtest-Slave # Or aarch64-unknown-linux-musl
 ```
 
-请注意: 当前我们尚未测试除了 `linux-amd64` 与 `linux-arm64` 的其他平台, 当您有其他系统 / 架构的需求, 请自行编译
+请注意: 当前我们尚未测试除了 `linux-x86_64` 与 `linux-arm64` 还有 `windows-x86_64` 的其他平台, 当您有其他系统 / 架构的需求, 请自行编译
 
 ### Docker
 
