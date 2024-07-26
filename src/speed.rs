@@ -121,6 +121,9 @@ pub async fn speed_one_ip(speedtest_url: String, ip: String, speed_time: u32) ->
         }
     }
 
+    stream.shutdown().await.unwrap();
+    drop(stream);
+
     // 计算下载速度（Mbps）。
     // 已下载
     let bytes_downloaded = data;
